@@ -34,18 +34,34 @@ iBoard=$(grep -e "^ro.product.board=" /default.prop | sed 's/^.*=\(.*\)$/\1/' | 
 iDevice=$(grep -e "^ro.product.device=" /default.prop | sed 's/^.*=\(.*\)$/\1/' | tr '[A-Z]' '[a-z]' | sed 's/ /_/')
 iPlatform=$(grep -e "^ro.board.platform=" /default.prop | sed 's/^.*=\(.*\)$/\1/' | tr '[A-Z]' '[a-z]' | sed 's/ /_/')
 
-if [[ -f devices/${iModel}.sh || -f devices/${iBoard}.sh || -f devices/${iDevice}.sh || -f devices/${iPlatform}.sh ]]; then
-    echo "Found device information: Model($iModel), Board($iBoard), Device($iDevice), Platform($iPlatform)" >> $cLog
+echo "Found device information: Model($iModel), Board($iBoard), Device($iDevice), Platform($iPlatform)" >> $cLog
 
-    test -f devices/${iPlatform}.sh && iScript=devices/${iPlatform}.sh
-    test -f devices/${iBoard}.sh && iScript=devices/${iBoard}.sh
-    test -f devices/${iModel}.sh && iScript=devices/${iModel}.sh
-    test -f devices/${iDevice}.sh && iScript=devices/${iDevice}.sh
+for i in $iPlatform $iBoard $iModel $iDevice; do
+    if [ -f devices/${i}.conf ]; then
+        iConfig=devices/${i}.conf
+        iScript=
 
-    echo "Using the device script $(basename $iScript)" >> $cLog
+    elif [ -f devices/${i}.sh ] then
+        iConfig=
+        iScript=devices/${i}.sh
+    fi
+done
+
+if [ ! -z "$iConfig" ]; then
+    iBlockDevice=$(grep -e "^[ \t]*device[ \t]*=" $iConfig | sed 's/^.*=\(.*\)$/\1/')
+    iBs=$(grep -e "^[ \t]*bs[ \t]*=" $iConfig | sed 's/^.*=\(.*\)$/\1/')
+
+    if [ -z "$iBs" ]; then
+        iBs=4096
+    fi
+fi
+
+if [[ ! -z "$iScript" || ! -z "$iBlockDevice" ]]; then
+
+    echo "Using the device script $(test ! -z "$iConfig" && echo "$iConfig" || basename $iScript)" >> $cLog
     echo "Extracting the device boot.img" >> $cLog
 
-    if test ! -z "$iScript" && chmod 0775 $iScript && $iScript read $cBootimg; then
+    if ( test ! -z "$iConfig" && dd if=$iBlockDevice of=$iBootimg bs=$iBs ) || ( test ! -z "$iScript" && chmod 0775 $iScript && $iScript read $cBootimg ); then
         echo "Extracting the ramdisk from the boot.img" >> $cLog
 
         if mkdir $cBootDir && ( cd $cBootDir && $cSelf/abootimg -x $cBootimg && mkdir initrd && zcat initrd.img | ( cd initrd && cpio -i ) ); then
@@ -64,7 +80,7 @@ if [[ -f devices/${iModel}.sh || -f devices/${iBoard}.sh || -f devices/${iDevice
             if ( cd $cBootDir && ( cd initrd && find | sort | cpio -o -H newc ) | gzip > initrd.img && $cSelf/abootimg -u $cBootimg -r initrd.img -f bootimg.cfg ); then
                 echo "Writing new boot.img to the device" >> $cLog
 
-                if $iScript write $cBootimg; then
+                if ( test ! -z "$iConfig" && dd if=$iBootimg of=$iBlockDevice bs=$iBs ) || ( test ! -z "$iScript" && $iScript write $cBootimg ); then
                     echo "The boot.img has been successfully updated" >> $cLog
 
                 else
@@ -84,7 +100,7 @@ if [[ -f devices/${iModel}.sh || -f devices/${iBoard}.sh || -f devices/${iDevice
     fi
 
 else
-    echo "Could not locate any device scripts for this specific board or model!" >> $cLog; sCode=1
+    echo "Could not locate any device scripts/configs for this specific board or model!" >> $cLog; sCode=1
 fi
 
 echo "Cleaning up" >> $cLog
