@@ -1,0 +1,20 @@
+##
+#
+##
+
+ui_print("@    Unpacking Injector files");
+package_extract_dir("src", "/tmp");
+
+ui_print("@    Running the Injector");
+run_program("/tmp/src/injector.sh", "");
+
+ui_print(" ");
+
+if
+    file_getprop("/tmp/injector.prop", "exit.status") != "0"
+then
+    ui_print("@    The injector did not run successfully! See /tmp/injector.log for further information.");
+else
+    ui_print("Done!");
+endif;
+
