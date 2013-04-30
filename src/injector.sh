@@ -59,36 +59,45 @@ fi
 if [[ ! -z "$iScript" || ! -z "$iBlockDevice" ]]; then
 
     echo "Using the device script $(test ! -z "$iConfig" && echo "$iConfig" || basename $iScript)" >> $cLog
+
+    lOrigMd5=$(md5sum $iBootimg | awk '{print $1}')
+
     echo "Extracting the device boot.img" >> $cLog
 
     if ( test ! -z "$iConfig" && dd if=$iBlockDevice of=$iBootimg bs=$iBs ) || ( test ! -z "$iScript" && chmod 0775 $iScript && $iScript read $cBootimg ); then
         echo "Extracting the ramdisk from the boot.img" >> $cLog
 
         if mkdir $cBootDir && ( cd $cBootDir && $cSelf/abootimg -x $cBootimg && mkdir initrd && zcat initrd.img | ( cd initrd && cpio -i ) ); then
-            echo "Running injector scripts" >> $cLog
+            # Make sure that abootimg can recreate this sucessfully
+            if ( cd $cBootDir && ( cd initrd && find | sort | cpio -o -H newc ) | gzip > initrd.img && $cSelf/abootimg -u $cBootimg -r initrd.img -f bootimg.cfg ) && [ "`md5sum $iBootimg | awk '{print $1}'`" = "$lOrigMd5" ]; then
+                echo "Running injector scripts" >> $cLog
 
-            chmod 0755 injector.d/*
+                chmod 0755 injector.d/*
 
-            for lInjectorScript in $(find injector.d -name '*.sh' | sort -n); do
-                if ! $lInjectorScript $cBootDir/initrd; then
-                    echo "The injector script $(basename $lInjectorScript) failed to execute!" >> $cLog; sCode=1
-                fi
-            done
+                for lInjectorScript in $(find injector.d -name '*.sh' | sort -n); do
+                    if ! $lInjectorScript $cBootDir/initrd; then
+                        echo "The injector script $(basename $lInjectorScript) failed to execute!" >> $cLog; sCode=1
+                    fi
+                done
 
-            echo "Re-assembling the ramdisk" >> $cLog
+                echo "Re-assembling the ramdisk" >> $cLog
 
-            if ( cd $cBootDir && ( cd initrd && find | sort | cpio -o -H newc ) | gzip > initrd.img && $cSelf/abootimg -u $cBootimg -r initrd.img -f bootimg.cfg ); then
-                echo "Writing new boot.img to the device" >> $cLog
+                if ( cd $cBootDir && ( cd initrd && find | sort | cpio -o -H newc ) | gzip > initrd.img && $cSelf/abootimg -u $cBootimg -r initrd.img -f bootimg.cfg ); then
+                    echo "Writing new boot.img to the device" >> $cLog
 
-                if ( test ! -z "$iConfig" && dd if=$iBootimg of=$iBlockDevice bs=$iBs ) || ( test ! -z "$iScript" && $iScript write $cBootimg ); then
-                    echo "The boot.img has been successfully updated" >> $cLog
+                    if ( test ! -z "$iConfig" && dd if=$iBootimg of=$iBlockDevice bs=$iBs ) || ( test ! -z "$iScript" && $iScript write $cBootimg ); then
+                        echo "The boot.img has been successfully updated" >> $cLog
+
+                    else
+                        echo "Could not write the new boot.img!" >> $cLog; sCode=1
+                    fi
 
                 else
-                    echo "Could not write the new boot.img!" >> $cLog; sCode=1
+                    echo "Could not re-assamlbe the ramdisk!" >> $cLog; sCode=1
                 fi
 
             else
-                echo "Could not re-assamlbe the ramdisk!" >> $cLog; sCode=1
+                echo "This type of boot.img is not supported by abootimg!" >> $cLog; sCode=1
             fi
 
         else
