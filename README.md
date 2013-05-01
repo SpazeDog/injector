@@ -38,6 +38,9 @@ Supported Devices
 * SMDK4412 (Untested)
     * Samsung Galaxy S III I9305
 
+* Golden (Untested)
+    * Samsung Galaxy S III Mini I8190
+
 * Totoro
     * Samsung Galaxy Y S5360
 
