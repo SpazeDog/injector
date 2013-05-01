@@ -93,11 +93,12 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
         echo "Extracting the ramdisk from the boot.img"
 
         if ( cd $cDirectoryBoot && abootimg -x $cImgBoot); then
-            lBootSumOld=$($bb test "`$bb md5sum $cImgBoot | $bb awk '{print $1}'`" = "``")
-            abootimg -u $cImgBoot -r $cFileBootInitrd -f $cFileBootCfg
-            lBootSumNew=$($bb test "`$bb md5sum $cImgBoot | $bb awk '{print $1}'`" = "``")
+            lBootSumOld=$($bb md5sum $cImgBoot | $bb awk '{print $1}')
 
-            $bb test "$lBootSumOld" = "$lBootSumNew" && bUseAbootimg=true
+            if abootimg -u $cImgBoot -r $cFileBootInitrd -f $cFileBootCfg; then
+                lBootSumNew=$($bb md5sum $cImgBoot | $bb awk '{print $1}')
+                $bb test "$lBootSumOld" = "$lBootSumNew" && bUseAbootimg=true
+            fi
 
         else
         # elif ! unpack-bootimg -i $cImgBoot -o $cDirectoryBoot -k $($bb basename $cFileBootZImage) -r $($bb basename $cFileBootInitrd) -s $($bb basename $cFileBootSecond) 
