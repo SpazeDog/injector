@@ -38,6 +38,9 @@ Supported Devices
 * SMDK4412 (Untested)
     * Samsung Galaxy S III I9305
 
+* Totoro
+    * Samsung Galaxy Y S5360
+
 Example
 ------
 Let's create a simple package that removes init.cm.rc
