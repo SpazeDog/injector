@@ -120,15 +120,14 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
             
             echo "Running injector.d scripts"
 
-            for lInjectorScript in `$bb find $cDirectoryInjectors -name '*.sh' | sort -n`; do
-                $lInjectorScript $bb $cDirectoryInitrd $cDirectoryTools; bStatus=$($bb test $? -eq 0)
+            while true; do
+                for lInjectorScript in `$bb find $cDirectoryInjectors -name '*.sh' | sort -n`; do
+                    echo "Running $($bb basename $lInjectorScript)"
 
-                if ! bStatus; then
-                    break
-                fi
-            done
-
-            if ! bStatus; then
+                    if ! $lInjectorScript $bb $cDirectoryInitrd $cDirectoryTools; then
+                        echo "The injector.d script $($bb basename $lInjectorScript) failed to execute properly!"; break 2
+                    fi
+                done
 
                 echo "Re-assambling the ramdisk"
 
@@ -166,9 +165,8 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
                     echo "Failed while trying to re-assamble the ramdisk!"
                 fi
 
-            else
-                echo "The injector.d script $($bb basename $lInjectorScript) failed to execute properly!"
-            fi
+                break
+            done
 
         else
             echo "Failed while extracting the ramdisk from the boot.img!"
