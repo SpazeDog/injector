@@ -9,6 +9,36 @@ The one problem with Android when it comes to customization, is the Ramdisk. You
 
 SpazeDog Injector is a recovery script which enables you to edit the ramdisk on multiple devices, without having to code any device specific code. By using separate device configs to extract and write the boot.img, it is easy to add new devices to the support tree, without having to rewrite any existing files. 
 
+Supported Devices
+------
+
+* QSD8K
+    * HTC Desire GSM
+    * HTC Desire CDMA
+    * HTC Nexus One
+
+
+* Aries (Untested)
+    * Samsung Galaxy S I9000
+    * Samsung Galaxy S I9000B
+    * Samsung Galaxy S Captivate
+    * Samsung Galaxy S Vibrant
+    * Samsung Galaxy S Fascinate
+
+
+* smdk4210 (Untested)
+    * Samsung Galaxy S II I9100
+    * Samsung Galaxy S II I777
+
+
+* SMDK4x12 (Untested)
+    * Samsung Galaxy S III I9300
+    * Samsung Galaxy S III Sprint
+
+
+* SMDK4412 (Untested)
+    * Samsung Galaxy S III I9305
+
 Usage
 ------
 The injector will do all the work of extracting the boot.img and the ramdisk, re-assemble and write the new edited version. All you have to do, is create a script to do the kind of editing that you would like.
