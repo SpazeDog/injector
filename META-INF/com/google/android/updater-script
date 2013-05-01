@@ -3,10 +3,11 @@
 ##
 
 ui_print("@    Unpacking Injector files");
-package_extract_dir("src", "/tmp");
+package_extract_dir("src", "/tmp/injector");
 
 ui_print("@    Running the Injector");
-run_program("/tmp/src/injector.sh", "");
+set_perm(0, 0, 0775, "/tmp/injector/injector.sh");
+run_program("/tmp/injector/injector.sh", "");
 
 ui_print(" ");
 
