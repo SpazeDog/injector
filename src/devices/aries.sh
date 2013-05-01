@@ -1,3 +1,4 @@
+#!/sbin/sh
 #####
 # This file is part of the Injector Project: https://github.com/spazedog/injector
 #  
@@ -17,8 +18,31 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-# Dev path to the boot partitions block device
-device = <Boot Device>
+## Samsung Galaxy S
 
-# read and write up to BYTES bytes at a time
-bs = 4096
+bb=$1
+iAction=$2
+iBootimg=$3
+
+case "$iAction" in 
+    read)
+        if dump_image boot $iBootimg; then
+            exit 0
+        fi
+    ;;
+
+    write)
+        if $bb [ -e /dev/block/bml7 ]; then
+            if flash_image boot $iBootimg; then
+                exit 0
+            fi
+
+        else
+            if bml_over_mtd.sh boot 72 reservoir 2004 $iBootimg; then
+                exit 0
+            fi
+        fi
+    ;;
+esac
+
+exit 1
