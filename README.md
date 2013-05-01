@@ -17,6 +17,8 @@ Supported Devices
     * HTC Desire CDMA
     * HTC Nexus One
 
+* Marvel
+    * HTC Wildfire S
 
 * Aries (Untested)
     * Samsung Galaxy S I9000
@@ -25,16 +27,13 @@ Supported Devices
     * Samsung Galaxy S Vibrant
     * Samsung Galaxy S Fascinate
 
-
 * smdk4210 (Untested)
     * Samsung Galaxy S II I9100
     * Samsung Galaxy S II I777
 
-
 * SMDK4x12 (Untested)
     * Samsung Galaxy S III I9300
     * Samsung Galaxy S III Sprint
-
 
 * SMDK4412 (Untested)
     * Samsung Galaxy S III I9305
