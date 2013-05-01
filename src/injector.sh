@@ -18,6 +18,8 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
+VERSION=0.1.2
+
 bb=busybox
 
 cDirectory=$($bb readlink -f $($bb dirname $0))
@@ -34,7 +36,7 @@ cFileBootInitrd=$cDirectoryBoot/initrd.img
 cFileBootSecond=$cDirectoryBoot/stage2.img
 cFileBootCfg=$cDirectoryBoot/bootimg.cfg
 
-echo "Starting Injection" > $cLog
+echo "Starting Injection v.$VERSION" > $cLog
 exec >> $cLog 2>&1 
 
 iModel=$($bb grep -e "^ro.product.model=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/')
