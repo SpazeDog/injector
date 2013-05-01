@@ -59,7 +59,7 @@ if $bb [ ! -z "$iConfigFile" ]; then
 
     done < $iConfigFile
 
-    echo "Using $($bb basename $iConfigFile): device($c_device), bs($c_bs), base($c_base), cmdline($c_cmdline), script($c_script)"
+    echo "Using $($bb basename $iConfigFile): device($c_device), bs($c_pagesize), base($c_base), cmdline($c_cmdline), script($c_script)"
 
     if $bb [ ! -z "$c_script" ]; then
         $bb test -f $cDirectoryDevices/${c_script} && c_script=$cDirectoryDevices/${c_script} || c_script=$cDirectoryDevices/${c_script}.sh
@@ -82,7 +82,7 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
         $c_script $bb read $cImgBoot $cDirectoryTools; bStatus=$($bb test $? -eq 0)
 
     else
-        $bb test ! -z "$c_bs" && $bb dd if=$c_device of=$cImgBoot bs=$c_bs || $bb dd if=$c_device of=$cImgBoot
+        $bb test ! -z "$c_pagesize" && $bb dd if=$c_device of=$cImgBoot bs=$c_pagesize || $bb dd if=$c_device of=$cImgBoot
     fi
 
     if $bStatus && $bb [ -f $cImgBoot ]; then
@@ -136,7 +136,7 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
                     echo "Re-assambling the boot.img"
 
                     if ! $bUseAbootimg || ! abootimg -u $cImgBoot -r $cFileBootInitrd -f $cFileBootCfg; then
-                        mkbootimg -o $cImgBoot --kernel $cFileBootZImage --ramdisk $cFileBootInitrd $($bb test ! -z "$c_base" && echo "--base") $c_base $($bb test ! -z "$c_cmdline" && echo "--cmdline") "$c_cmdline" $($bb test -f $cFileBootSecond && echo "--second") $($bb test -f $cFileBootSecond && echo $cFileBootSecond)
+                        mkbootimg -o $cImgBoot --kernel $cFileBootZImage --ramdisk $cFileBootInitrd $($bb test ! -z "$c_base" && echo "--base") $c_base $($bb test ! -z "$c_cmdline" && echo "--cmdline") "$c_cmdline" $($bb test ! -z "$c_pagesize" && echo "--pagesize") $c_pagesize $($bb test -f $cFileBootSecond && echo "--second") $($bb test -f $cFileBootSecond && echo $cFileBootSecond)
                     fi
 
                     if $bb [ $? -eq 0 ]; then
@@ -147,7 +147,7 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
                             $c_script $bb write $cImgBoot $cDirectoryTools
 
                         else
-                            $bb dd if=$cImgBoot of=$c_device $($bb test ! -z "$c_bs" && echo "bs=$c_bs")
+                            $bb dd if=$cImgBoot of=$c_device $($bb test ! -z "$c_pagesize" && echo "bs=$c_pagesize")
                         fi
 
                         if $bb [ $? -eq 0 ]; then
