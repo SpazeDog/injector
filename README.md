@@ -5,9 +5,9 @@ An Android Ramdisk Injector
 
 About
 ------
-The one problem with Android when it comes to customization, is the Ramdisk. You are not able to edit anything while the device is booted, and each device differs in many ways which makes it difficult to create a simple updater script to do the work. 
+The one problem with Android when it comes to customization, is the Ramdisk. You are not able to edit anything while the device is booted, and each device differs in many ways which makes it difficult to create an updater script to do the work without targering a specific device. 
 
-SpazeDog Injector is a recovery script which enables you to edit the ramdisk on multiple devices, without having to code any device specific code. By using separate device configs to extract and write the boot.img, it is easy to add new devices to the support tree, without having to rewrite any existing files. 
+Injector is a recovery script that enables you to modify the ramdisk on multiple devices, without having to worry about creating device specific code. The injector will extract the ramdisk for you, and it will write it back to the boot partition once you are done. All you have to do, is create any script that does whatever work you need it to do, place it in the injector.d folder, compress the updater archive and upload. 
 
 Supported Devices
 ------
@@ -38,39 +38,61 @@ Supported Devices
 * SMDK4412 (Untested)
     * Samsung Galaxy S III I9305
 
-Usage
+Example
 ------
-The injector will do all the work of extracting the boot.img and the ramdisk, re-assemble and write the new edited version. All you have to do, is create a script to do the kind of editing that you would like.
+Let's create a simple package that removes init.cm.rc
 
 ```bash
 #!/sbin/sh
-# injector.d/09-myscript.sh
+
+# Path to the busybox binary in usage
+BB=$1
 
 # The path to the extracted ramdisk
-RAMDISK=$1
+RAMDISK=$2
 
-rm -rf init.cm.rc
+# The tools directory. In case your script needs any additional files, this is where to place them
+TOOLS=$3
+
+$BB rm -rf $RAMDISK/init.cm.rc
 
 exit 0
 ```
 
-Once this script has been executed by the injector, a new boot.img has been written which does not include init.cm.rc
+Now place this script in the injector.d directory, for an example injector.d/05-myscript.sh
 
-Adding device support
+Now all you have to do is pack it all to a ZIP file and upload for anyone to use. This new package will work on any device listed in the supported section above.
+
+Support Configurations
 ------
-Each device has it's own way of writing/storing the boot.img. Because of this, injector uses config scripts to read/write from/to the boot partition. These files is placed in devices/ and are named as the device it adds support for. The names are extracted from the build.prop. You can name your device config using the board name, device name, platform or model. 
+In the devices/ directory are all the configurations which adds support for various devices. In order to add support for a new device, create a file &lt;platform&gt;.conf, &lt;board&gt;.conf, &lt;device&gt;.conf or &lt;model&gt;.conf. 
+
+```bash
+# Path to the block or character device which can read and write to the boot partition
+# Note: Not needed if you apply a script
+device = /dev/block/mmcblk0p5
+
+# The boot page size
+pagesize = 2048
+
+# The boot base
+base = 0x12c00000
+
+# The boot cmdline
+cmdline = no_console_suspend=1 console=null
+
+# The name of a device script which will handle the boot read and write
+script = mtd
+```
+Below is an example of the script mtd.sh, applied in the configs above. A script is only needed in cases where a simple 'dd if= of=' is not enough, otherwise you can leave out the script and let Injector handle it.
 
 ```bash
 #!/sbin/sh
-# devices/qsd8k.sh
 
-iAction=$1
-iBootimg=$2
+bb=$1
+iAction=$2
+iBootimg=$3
 iDevice=$(grep boot /proc/mtd | sed 's/^\(.*\):.*/\1/')
-
-if [ -z "$iDevice" || ! -e /dev/mtd/$iDevice ]; then
-    iDevice=mtd2
-fi
 
 case "$iAction" in 
     read)
@@ -88,5 +110,3 @@ esac
 
 exit 1
 ```
-
-This will be used by any device using the QSD8K platform. We could also add another config file named bravo.sh which would only be used by QSD8K devices using the bravo board. 
