@@ -20,6 +20,9 @@ Supported Devices
 * Marvel
     * HTC Wildfire S
 
+* Spade
+    * HTC Desire HD
+
 * Aries (Untested)
     * Samsung Galaxy S I9000
     * Samsung Galaxy S I9000B
