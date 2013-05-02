@@ -4,8 +4,10 @@
 
 ui_print("@    Unpacking Injector files");
 package_extract_dir("src", "/tmp/injector");
+package_extract_file("busybox", "/tmp/busybox");
 
 ui_print("@    Running the Injector");
+set_perm(0, 0, 0775, "/tmp/busybox");
 set_perm(0, 0, 0775, "/tmp/injector/injector.sh");
 run_program("/tmp/injector/injector.sh", "");
 

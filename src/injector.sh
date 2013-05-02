@@ -20,7 +20,11 @@
 
 VERSION=0.1.2
 
-bb=busybox
+for i in /tmp/busybox busybox; do
+    if $i test true 2>/dev/null; then
+        bb=$i; break
+    fi
+done
 
 cDirectory=$($bb readlink -f $($bb dirname $0))
 cExitCode=1
