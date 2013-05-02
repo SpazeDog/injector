@@ -18,7 +18,7 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-VERSION=0.1.2
+VERSION=0.1.4
 
 for i in /tmp/busybox busybox; do
     if $i test true 2>/dev/null; then
