@@ -44,6 +44,9 @@ Supported Devices
 * Golden
     * Samsung Galaxy S III Mini I8190
 
+* JF
+    * Samsung Galaxy S 4 I9505
+
 * Totoro
     * Samsung Galaxy Y S5360
 
