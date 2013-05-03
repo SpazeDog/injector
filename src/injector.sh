@@ -138,7 +138,11 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
 
                 echo "Re-assambling the ramdisk"
 
-                if ( cd $cDirectoryInitrd && $bb find | $bb sort | $bb cpio -o -H newc ) | $bb gzip > $cFileBootInitrd; then
+                if ! mkbootfs $cDirectoryInitrd | $bb gzip > $cFileBootInitrd; then
+                    ( cd $cDirectoryInitrd && $bb find | $bb sort | $bb cpio -o -H newc ) | $bb gzip > $cFileBootInitrd
+                fi
+
+                if $bb [ $? -eq 0 ]; then
 
                     echo "Re-assambling the boot.img"
 
