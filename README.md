@@ -13,7 +13,7 @@ Supported Devices
 ------
 
 * QSD8K
-    * HTC Desire GSM
+    * HTC Desire GSM (Tested)
     * HTC Desire CDMA
     * HTC Nexus One
 
@@ -23,25 +23,25 @@ Supported Devices
 * Spade
     * HTC Desire HD
 
-* Aries (Untested)
+* Aries
     * Samsung Galaxy S I9000
     * Samsung Galaxy S I9000B
     * Samsung Galaxy S Captivate
     * Samsung Galaxy S Vibrant
     * Samsung Galaxy S Fascinate
 
-* smdk4210 (Untested)
+* smdk4210
     * Samsung Galaxy S II I9100
     * Samsung Galaxy S II I777
 
-* SMDK4x12 (Untested)
-    * Samsung Galaxy S III I9300
+* SMDK4x12
+    * Samsung Galaxy S III I9300 (Tested)
     * Samsung Galaxy S III Sprint
 
-* SMDK4412 (Untested)
+* SMDK4412
     * Samsung Galaxy S III I9305
 
-* Golden (Untested)
+* Golden
     * Samsung Galaxy S III Mini I8190
 
 * Totoro
