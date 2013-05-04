@@ -23,6 +23,9 @@ Supported Devices
 * Spade
     * HTC Desire HD
 
+* PrimoU
+    * HTC One V
+
 * Ville
     * HTC One S
 
