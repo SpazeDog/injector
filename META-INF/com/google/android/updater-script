@@ -16,8 +16,22 @@ ui_print(" ");
 if
     file_getprop("/tmp/injector.prop", "exit.status") != "0"
 then
-    ui_print("@    The injector did not run successfully! See /tmp/injector.log for further information.");
-else
-    ui_print("Done!");
+    if
+        file_getprop("/tmp/injector.prop", "log.status") == "1"
+    then
+        ui_print("@    The injector did not run successfully! See /sdcard/injector.log for further information.");
+
+    else
+        ui_print("@    The injector did not run successfully! See /tmp/injector.log for further information.");
+    endif;
 endif;
+
+if
+    file_getprop("/tmp/injector.prop", "locked.status") == "1"
+then
+    ui_print("@    " + file_getprop("/tmp/injector.prop", "locked.message"));
+endif;
+
+ui_print(" ");
+ui_print("Done!");
 

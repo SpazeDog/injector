@@ -40,6 +40,8 @@ cFileBootInitrd=$cDirectoryBoot/initrd.img
 cFileBootSecond=$cDirectoryBoot/stage2.img
 cFileBootCfg=$cDirectoryBoot/bootimg.cfg
 
+$bb touch /tmp/injector.prop
+
 echo "Starting Injection v.$VERSION" > $cLog
 exec >> $cLog 2>&1 
 
@@ -193,6 +195,29 @@ fi
 
 echo "Cleaning up old files and directories"
 
+if $bb [ "`$bb grep '/sdcard ' /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]; then
+    tDevice=/data
+    tLocation=/data/media/0
+
+else
+    tDevice=/sdcard
+    tLocation=$tDevice
+fi
+
+if $bb grep -q $tDevice /proc/mounts || $bb mount $tDevice; then
+    if $bb [ "$c_locked" = "true" ]; then
+        $bb cp $cImgBoot $tLocation/
+
+        echo "locked.message=The boot.img has been copied to the sdcard" >> /tmp/injector.prop
+        echo "locked.status=1" >> /tmp/injector.prop
+    fi
+
+    $bb cp $cLog $tLocation/
+
+    echo "log.message=The log file has been copied to the sdcard" >> /tmp/injector.prop
+    echo "log.status=1" >> /tmp/injector.prop  
+fi
+
 $bb rm -rf $cDirectoryBoot
 
 (
@@ -202,6 +227,6 @@ $bb rm -rf $cDirectoryBoot
     $bb rm -rf $cImgBoot
 ) & 
 
-echo "exit.status=$cExitCode" > /tmp/injector.prop
+echo "exit.status=$cExitCode" >> /tmp/injector.prop
 
 exit $cExitCode
