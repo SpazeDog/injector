@@ -47,6 +47,9 @@ Supported Devices
 * JF
     * Samsung Galaxy S 4 I9505
 
+* JFLTE
+    * Samsung Galaxy S 4 I9505 LTE
+
 * Totoro
     * Samsung Galaxy Y S5360
 
