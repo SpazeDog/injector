@@ -35,6 +35,9 @@ Supported Devices
 * Evita
     * HTC One XL
 
+* Enrc2b
+    * HTC One X+
+
 * Aries
     * Samsung Galaxy S I9000
     * Samsung Galaxy S I9000B
