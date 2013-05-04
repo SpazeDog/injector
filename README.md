@@ -23,7 +23,10 @@ Supported Devices
 * Spade
     * HTC Desire HD
 
-* endeavoru
+* Ville
+    * HTC One S
+
+* Endeavoru
     * HTC One X
 
 * Aries
