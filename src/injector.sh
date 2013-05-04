@@ -18,7 +18,7 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-VERSION=0.1.4
+VERSION=0.1.5
 
 for i in /tmp/busybox busybox; do
     if $i test true 2>/dev/null; then
@@ -195,9 +195,7 @@ else
     echo "Missing script or block device!"
 fi
 
-echo "Cleaning up old files and directories"
-
-if $bb [ "`$bb grep '/sdcard ' /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]; then
+if $bb [ "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]; then
     tDevice=/data
     tLocation=/data/media/0
 
@@ -206,8 +204,12 @@ else
     tLocation=$tDevice
 fi
 
+echo "Copying log file to the sdcard"
+
 if $bb grep -q $tDevice /proc/mounts || $bb mount $tDevice; then
     if $bb [ "$c_locked" = "true" ]; then
+        echo "Copying boot.img to the sdcard"
+
         $bb cp $cImgBoot $tLocation/
 
         echo "locked.message=The boot.img has been copied to the sdcard" >> /tmp/injector.prop
@@ -219,6 +221,8 @@ if $bb grep -q $tDevice /proc/mounts || $bb mount $tDevice; then
     echo "log.message=The log file has been copied to the sdcard" >> /tmp/injector.prop
     echo "log.status=1" >> /tmp/injector.prop  
 fi
+
+echo "Cleaning up old files and directories"
 
 $bb rm -rf $cDirectoryBoot
 
