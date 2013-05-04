@@ -32,6 +32,9 @@ Supported Devices
 * Endeavoru
     * HTC One X
 
+* Evita
+    * HTC One XL
+
 * Aries
     * Samsung Galaxy S I9000
     * Samsung Galaxy S I9000B
