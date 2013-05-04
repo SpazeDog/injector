@@ -23,6 +23,9 @@ Supported Devices
 * Spade
     * HTC Desire HD
 
+* endeavoru
+    * HTC One X
+
 * Aries
     * Samsung Galaxy S I9000
     * Samsung Galaxy S I9000B
