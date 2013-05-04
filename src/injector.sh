@@ -149,7 +149,9 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
                     echo "Re-assambling the boot.img"
 
                     if ! $bUseAbootimg || ! abootimg -u $cImgBoot -r $cFileBootInitrd -f $cFileBootCfg; then
-                        mkbootimg -o $cImgBoot --kernel $cFileBootZImage --ramdisk $cFileBootInitrd $($bb test ! -z "$c_base" && echo "--base") $c_base $($bb test ! -z "$c_cmdline" && echo "--cmdline") "$c_cmdline" $($bb test ! -z "$c_pagesize" && echo "--pagesize") $c_pagesize $($bb test -f $cFileBootSecond && echo "--second") $($bb test -f $cFileBootSecond && echo $cFileBootSecond)
+                        if $bb [ "$c_recreate" != "false" ]; then
+                            mkbootimg -o $cImgBoot --kernel $cFileBootZImage --ramdisk $cFileBootInitrd $($bb test ! -z "$c_base" && echo "--base") $c_base $($bb test ! -z "$c_cmdline" && echo "--cmdline") "$c_cmdline" $($bb test ! -z "$c_pagesize" && echo "--pagesize") $c_pagesize $($bb test -f $cFileBootSecond && echo "--second") $($bb test -f $cFileBootSecond && echo $cFileBootSecond)
+                        fi
                     fi
 
                     if $bb [ $? -eq 0 ]; then
