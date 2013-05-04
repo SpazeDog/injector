@@ -101,6 +101,9 @@ cmdline = no_console_suspend=1 console=null
 
 # The name of a device script which will handle the boot read and write
 script = mtd
+
+# Use this on devices like some HTC devices which cannot write to boot via recovery
+locked = true
 ```
 Below is an example of the script mtd.sh, applied in the configs above. A script is only needed in cases where a simple 'dd if= of=' is not enough, otherwise you can leave out the script and let Injector handle it.
 
