@@ -44,8 +44,6 @@ for i in /tmp/busybox busybox; do
     fi
 done
 
-exit 0
-
 $bb touch /tmp/injector.prop
 
 iModel=$($bb grep -e "^ro.product.model=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
