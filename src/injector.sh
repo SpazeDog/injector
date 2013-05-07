@@ -18,7 +18,7 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-VERSION=0.1.5
+VERSION=0.1.6
 
 cDirectory=$($bb readlink -f $($bb dirname $0))
 cExitCode=1
