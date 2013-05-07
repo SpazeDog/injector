@@ -195,14 +195,17 @@ else
     echo "Missing script or block device!"
 fi
 
-if $bb [ "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]; then
-    tDevice=/data
-    tLocation=/data/media/0
+tDevice=/sdcard
+tLocation=$tDevice
 
-else
-    tDevice=/sdcard
-    tLocation=$tDevice
-fi
+for i in /etc/recovery.fstab /recovery.fstab; do
+    if $bb [[ -f $i && "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]]; then
+        tDevice=/data
+        tLocation=/data/media/0
+
+        break
+    fi
+done
 
 echo "Copying log file to the sdcard"
 
