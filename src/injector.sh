@@ -20,12 +20,6 @@
 
 VERSION=0.1.5
 
-for i in /tmp/busybox busybox; do
-    if $i test true 2>/dev/null; then
-        bb=$i; break
-    fi
-done
-
 cDirectory=$($bb readlink -f $($bb dirname $0))
 cExitCode=1
 cLog=/tmp/injector.log
@@ -40,10 +34,19 @@ cFileBootInitrd=$cDirectoryBoot/initrd.img
 cFileBootSecond=$cDirectoryBoot/stage2.img
 cFileBootCfg=$cDirectoryBoot/bootimg.cfg
 
-$bb touch /tmp/injector.prop
-
 echo "Starting Injection v.$VERSION" > $cLog
 exec >> $cLog 2>&1 
+
+for i in /tmp/busybox busybox; do
+    if $i test true; then
+        echo "Using $i as the toolbox for this script"
+        bb=$i; break
+    fi
+done
+
+exit 0
+
+$bb touch /tmp/injector.prop
 
 iModel=$($bb grep -e "^ro.product.model=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
 iBoard=$($bb grep -e "^ro.product.board=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
