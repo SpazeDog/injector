@@ -248,7 +248,11 @@ while true; do
 
         else
             if ! erase_image $SETTINGS_DEVICE || ! flash_image $SETTINGS_DEVICE $CONFIG_FILE_BOOTIMG; then
-                echo "It was not possible to write the boot.img to the device!"; break
+                echo "It was not possible to write the boot.img to the device!"
+
+                if $bb [ "$SETTINGS_LOCKED" != "true" ]; then
+                    break
+                fi
             fi
         fi
 
