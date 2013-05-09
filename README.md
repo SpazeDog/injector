@@ -92,6 +92,7 @@ In the `devices/` directory are all the configurations which adds support for va
 ```bash
 # Path to the block or character device which can read and write to the boot partition
 # Note: Not needed if you apply a script
+# Note 2: On devices like MTD, you can just use the keyword 'boot'
 device = /dev/block/mmcblk0p5
 
 # The boot page size
@@ -103,8 +104,19 @@ base = 0x12c00000
 # The boot cmdline
 cmdline = no_console_suspend=1 console=null
 
-# The name of a device script which will handle the boot read and write
+# The name of a device script which will handle the boot read and write along with other actions
 script = mtd
+
+# Which actions will be using the script instead of the builtin method
+# - read = The custom script will handle the extraction of the boot.img from the device
+# - write = The custom script will write the new boot.img back to the device
+# - pack = The custom script will re-pack the new boot.img
+# - unpack = The custom script will unpack the old boot.img
+# - assemble = The custom script will assemble the new initrd.img
+# - disassemble = The custom script will disassemble the old initrd.img
+# - validate = The custom script will validate the boot.img after extraction and again after it has been altered and repacked
+# Just leave out any action which should not be performed by the custom script. The injector will handle it instead.
+actions = read write pack unpack assemble disassemble validate
 
 # Use this on devices like some HTC devices which cannot write to boot via recovery
 locked = true
@@ -116,7 +128,7 @@ Below is an example of the script mtd.sh, applied in the configs above. A script
 
 iDevice=$($CONFIG_BUSYBOX grep boot /proc/mtd | sed 's/^\(.*\):.*/\1/')
 
-case "$iAction" in 
+case "$1" in 
     read)
         if $CONFIG_BUSYBOX dd if=/dev/mtd/$iDevice of=$CONFIG_FILE_BOOTIMG bs=4096; then
             exit 0
@@ -126,6 +138,36 @@ case "$iAction" in
     write)
         if test -f $CONFIG_FILE_BOOTIMG && $CONFIG_BUSYBOX dd if=$iBootimg of=/dev/mtd/$iDevice bs=4096; then
             exit 0
+        fi
+    ;;
+
+    unpack)
+        if unpack-bootimg -i $CONFIG_FILE_BOOTIMG -o $CONFIG_DIR_BOOTIMG -k $($CONFIG_BUSYBOX basename $CONFIG_FILE_ZIMAGE) -r $($CONFIG_BUSYBOX basename $CONFIG_FILE_INITRD) -s $($CONFIG_BUSYBOX basename $CONFIG_FILE_STAGE2); then
+            exit 0
+        fi
+    ;;
+
+    pack)
+        if mkbootimg -o $CONFIG_FILE_BOOTIMG --kernel $CONFIG_FILE_ZIMAGE --ramdisk $CONFIG_FILE_INITRD --base $SETTINGS_BASE --cmdline "$SETTINGS_CMDLINE" --pagesize $SETTINGS_PAGESIZE; then
+            exit 0
+        fi
+    ;;
+
+    disassemble)
+        if $CONFIG_BUSYBOX zcat $CONFIG_FILE_INITRD | ( cd $CONFIG_DIR_INITRD && $CONFIG_BUSYBOX cpio -i ); then
+            exit 0
+        fi
+    ;;
+
+    assemble)
+        if ( cd $CONFIG_DIR_INITRD && $CONFIG_BUSYBOX find | $CONFIG_BUSYBOX sort | $CONFIG_BUSYBOX cpio -o -H newc ) | $CONFIG_BUSYBOX gzip > $CONFIG_FILE_INITRD; then
+            exit 0
+        fi
+    ;;
+
+    validate)
+        if abootimg -i $CONFIG_FILE_BOOTIMG; then
+            return 0
         fi
     ;;
 esac
@@ -190,4 +232,16 @@ $CONFIG_DEVICE_PLATFORM
 # Each index name should be in upper case. 
 # Example: $SETTINGS_CMDLINE or $SETTINGS_DEVICE
 $SETTINGS_<NAME>
+
+# Note that $SETTINGS_ACTIONS will auto generate one true variable per each action defined.
+# If you add "actions = read write" to the config file, then $SETTINGS_ACTIONS_READ and $SETTINGS_ACTIONS_WRITE will be set to "true". 
+# Default value for each $SETTINGS_ACTIONS_<ACTION> is "false". 
+# Also, these cannot be set directly from the config file. "actions_read = true" will not work.
+$SETTINGS_ACTIONS_READ
+$SETTINGS_ACTIONS_WRITE
+$SETTINGS_ACTIONS_DISASSEMBLE
+$SETTINGS_ACTIONS_ASSEMBLE
+$SETTINGS_ACTIONS_PACK
+$SETTINGS_ACTIONS_UNPACK
+$SETTINGS_ACTIONS_VALIDATE
 ```
