@@ -13,7 +13,7 @@ Supported Devices
 ------
 
 * QSD8K
-    * HTC Desire GSM (Tested)
+    * HTC Desire GSM `Tested`
     * HTC Desire CDMA
     * HTC Nexus One
 
@@ -50,7 +50,7 @@ Supported Devices
     * Samsung Galaxy S II I777
 
 * SMDK4x12
-    * Samsung Galaxy S III I9300 (Tested)
+    * Samsung Galaxy S III I9300 `Tested`
     * Samsung Galaxy S III Sprint
 
 * SMDK4412
@@ -81,13 +81,13 @@ $CONFIG_BUSYBOX rm -rf $CONFIG_DIR_INITRD/init.cm.rc
 exit 0
 ```
 
-Now place this script in the injector.d directory, for an example injector.d/05-myscript.sh
+Now place this script in the `injector.d` directory, for an example `injector.d/05-myscript.sh`
 
 Now all you have to do is pack it all to a ZIP file and upload for anyone to use. This new package will work on any device listed in the supported section above.
 
 Support Configurations
 ------
-In the devices/ directory are all the configurations which adds support for various devices. In order to add support for a new device, create a file &lt;platform&gt;.conf, &lt;board&gt;.conf, &lt;device&gt;.conf or &lt;model&gt;.conf. 
+In the `devices/` directory are all the configurations which adds support for various devices. In order to add support for a new device, create a file `<platform>.conf`, `<board>.conf`, `<device>.conf` or `<model>.conf`. 
 
 ```bash
 # Path to the block or character device which can read and write to the boot partition
@@ -109,10 +109,33 @@ script = mtd
 # Use this on devices like some HTC devices which cannot write to boot via recovery
 locked = true
 ```
+Below is an example of the script mtd.sh, applied in the configs above. A script is only needed in cases where a simple `dd if= of=` is not enough, otherwise you can leave out the script and let Injector handle it.
+
+```bash
+#!/sbin/sh
+
+iDevice=$($CONFIG_BUSYBOX grep boot /proc/mtd | sed 's/^\(.*\):.*/\1/')
+
+case "$iAction" in 
+    read)
+        if $CONFIG_BUSYBOX dd if=/dev/mtd/$iDevice of=$CONFIG_FILE_BOOTIMG bs=4096; then
+            exit 0
+        fi
+    ;;
+
+    write)
+        if test -f $CONFIG_FILE_BOOTIMG && $CONFIG_BUSYBOX dd if=$iBootimg of=/dev/mtd/$iDevice bs=4096; then
+            exit 0
+        fi
+    ;;
+esac
+
+exit 1
+```
 
 Global Variables
 ------
-Both device scripts and injector.d scripts has access to a bunch of global variables which is created by injector opon launch. 'CONFIG_' variables contains injector configurations and 'SETTINGS_' variables contains everything defined in the device config file.
+Both device scripts and injector.d scripts has access to a bunch of global variables which is created by injector opon launch. `CONFIG_` variables contains injector configurations and `SETTINGS_` variables contains everything defined in the device config file.
 
 ```bash
 # Path to a working busybox binary
@@ -167,28 +190,4 @@ $CONFIG_DEVICE_PLATFORM
 # Each index name should be in upper case. 
 # Example: $SETTINGS_CMDLINE or $SETTINGS_DEVICE
 $SETTINGS_<NAME>
-```
-
-Below is an example of the script mtd.sh, applied in the configs above. A script is only needed in cases where a simple 'dd if= of=' is not enough, otherwise you can leave out the script and let Injector handle it.
-
-```bash
-#!/sbin/sh
-
-iDevice=$($CONFIG_BUSYBOX grep boot /proc/mtd | sed 's/^\(.*\):.*/\1/')
-
-case "$iAction" in 
-    read)
-        if $CONFIG_BUSYBOX dd if=/dev/mtd/$iDevice of=$CONFIG_FILE_BOOTIMG bs=4096; then
-            exit 0
-        fi
-    ;;
-
-    write)
-        if test -f $CONFIG_FILE_BOOTIMG && $CONFIG_BUSYBOX dd if=$iBootimg of=/dev/mtd/$iDevice bs=4096; then
-            exit 0
-        fi
-    ;;
-esac
-
-exit 1
 ```
