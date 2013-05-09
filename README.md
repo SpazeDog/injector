@@ -75,16 +75,8 @@ Let's create a simple package that removes init.cm.rc
 ```bash
 #!/sbin/sh
 
-# Path to the busybox binary in usage
-BB=$1
-
-# The path to the extracted ramdisk
-RAMDISK=$2
-
-# The tools directory. In case your script needs any additional files, this is where to place them
-TOOLS=$3
-
-$BB rm -rf $RAMDISK/init.cm.rc
+# Remove init.cm.rc from the ramdisk
+$CONFIG_BUSYBOX rm -rf $CONFIG_DIR_INITRD/init.cm.rc
 
 exit 0
 ```
@@ -117,25 +109,82 @@ script = mtd
 # Use this on devices like some HTC devices which cannot write to boot via recovery
 locked = true
 ```
+
+Global Variables
+------
+Both device scripts and injector.d scripts has access to a bunch of global variables which is created by injector opon launch. 'CONFIG_' variables contains injector configurations and 'SETTINGS_' variables contains everything defined in the device config file.
+
+```bash
+# Path to a working busybox binary
+$CONFIG_BUSYBOX
+
+# Complete path to the Injector root directory
+$CONFIG_DIR_INJECTOR
+
+# Path to the boot.img
+$CONFIG_FILE_BOOTIMG
+
+# Path to the directory containing the unpacked boot.img
+$CONFIG_DIR_BOOTIMG
+
+# Path to the directory containing the unpacked initrd
+$CONFIG_DIR_INITRD
+
+# Path to the initrd.img
+$CONFIG_FILE_INITRD
+
+# Path to the kernel/zimage
+$CONFIG_FILE_ZIMAGE
+
+# Path to the second stage image
+$CONFIG_FILE_STAGE2
+
+# Path to the abootimg configuration file
+$CONFIG_FILE_CFG
+
+# Path to the injector tools directory ($CONFIG_DIR_TOOLS/bin is added to $PATH)
+$CONFIG_DIR_TOOLS
+
+# Path to the injector device configuration files directory
+$CONFIG_DIR_DEVICES
+
+# Path to the injector.d scripts directory
+$CONFIG_DIR_SCRIPTS
+
+# The device model name (From /default.prop)
+$CONFIG_DEVICE_MODEL
+
+# The device board name (From /default.prop)
+$CONFIG_DEVICE_BOARD
+
+# The device name (From /default.prop)
+$CONFIG_DEVICE_NAME
+
+# The device platform (From /default.prop)
+$CONFIG_DEVICE_PLATFORM
+
+# One for each index of the device configuration file is created.
+# Each index name should be in upper case. 
+# Example: $SETTINGS_CMDLINE or $SETTINGS_DEVICE
+$SETTINGS_<NAME>
+```
+
 Below is an example of the script mtd.sh, applied in the configs above. A script is only needed in cases where a simple 'dd if= of=' is not enough, otherwise you can leave out the script and let Injector handle it.
 
 ```bash
 #!/sbin/sh
 
-bb=$1
-iAction=$2
-iBootimg=$3
-iDevice=$(grep boot /proc/mtd | sed 's/^\(.*\):.*/\1/')
+iDevice=$($CONFIG_BUSYBOX grep boot /proc/mtd | sed 's/^\(.*\):.*/\1/')
 
 case "$iAction" in 
     read)
-        if dd if=/dev/mtd/$iDevice of=$iBootimg bs=4096; then
+        if $CONFIG_BUSYBOX dd if=/dev/mtd/$iDevice of=$CONFIG_FILE_BOOTIMG bs=4096; then
             exit 0
         fi
     ;;
 
     write)
-        if test -f $iBootimg && dd if=$iBootimg of=/dev/mtd/$iDevice bs=4096; then
+        if test -f $CONFIG_FILE_BOOTIMG && $CONFIG_BUSYBOX dd if=$iBootimg of=/dev/mtd/$iDevice bs=4096; then
             exit 0
         fi
     ;;
