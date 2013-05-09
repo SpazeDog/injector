@@ -21,12 +21,6 @@
 ## Samsung Galaxy S
 
 case "$1" in 
-    read)
-        if dump_image boot $CONFIG_FILE_BOOTIMG; then
-            exit 0
-        fi
-    ;;
-
     write)
         if $CONFIG_BUSYBOX [ -e /dev/block/bml7 ]; then
             if flash_image boot $CONFIG_FILE_BOOTIMG; then
