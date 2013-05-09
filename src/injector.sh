@@ -112,7 +112,7 @@ while true; do
         if $bb [ -z "$CONFIG_DEVICE_SETTINGS" ]; then
             echo "Could not locate any configuration file for this device!"; break
 
-        elif $bb [ -z "$SETTINGS_SCRIPT" ] && $bb [[ -z "$SETTINGS_DEVICE" || ! -e $SETTINGS_DEVICE ]]; then
+        elif $bb [ -z "$SETTINGS_SCRIPT" ] && $bb [[ "$SETTINGS_DEVICE" != "boot" && ! -e "$SETTINGS_DEVICE" ]]; then
             echo "The configuration file $CONFIG_DEVICE_SETTINGS does not contain any valid information about the boot partition!"; break
         fi
 
@@ -139,7 +139,7 @@ while true; do
             fi
 
         else
-            if ! $bb dd if=$SETTINGS_DEVICE of=$CONFIG_FILE_BOOTIMG $($bb test -n "$SETTINGS_PAGESIZE" && echo "bs=$SETTINGS_PAGESIZE"); then
+            if ! dump_image $SETTINGS_DEVICE $CONFIG_FILE_BOOTIMG; then
                 echo "It was not possible to extract the boot.img from the device!"; break
             fi
         fi
@@ -247,7 +247,7 @@ while true; do
             fi
 
         else
-            if ! $bb dd if=$CONFIG_FILE_BOOTIMG of=$SETTINGS_DEVICE $($bb test -n "$SETTINGS_PAGESIZE" && echo "bs=$SETTINGS_PAGESIZE"); then
+            if ! erase_image $SETTINGS_DEVICE || ! flash_image $SETTINGS_DEVICE $CONFIG_FILE_BOOTIMG; then
                 echo "It was not possible to write the boot.img to the device!"; break
             fi
         fi
