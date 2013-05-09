@@ -15,7 +15,7 @@ Supported Devices
 * QSD8K
     * HTC Desire GSM `Tested`
     * HTC Desire CDMA
-    * HTC Nexus One
+    * HTC Nexus One `Tested`
 
 * Marvel
     * HTC Wildfire S
