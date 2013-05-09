@@ -20,25 +20,21 @@
 
 ## Samsung Galaxy S
 
-bb=$1
-iAction=$2
-iBootimg=$3
-
-case "$iAction" in 
+case "$1" in 
     read)
-        if dump_image boot $iBootimg; then
+        if dump_image boot $CONFIG_FILE_BOOTIMG; then
             exit 0
         fi
     ;;
 
     write)
-        if $bb [ -e /dev/block/bml7 ]; then
-            if flash_image boot $iBootimg; then
+        if $CONFIG_BUSYBOX [ -e /dev/block/bml7 ]; then
+            if flash_image boot $CONFIG_FILE_BOOTIMG; then
                 exit 0
             fi
 
         else
-            if bml_over_mtd.sh boot 72 reservoir 2004 $iBootimg; then
+            if bml_over_mtd.sh boot 72 reservoir 2004 $CONFIG_FILE_BOOTIMG; then
                 exit 0
             fi
         fi

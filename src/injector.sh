@@ -18,93 +18,150 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-VERSION=0.1.6
+VERSION=0.2.0
+LOG=/tmp/injector.log
+EXIT=1
 
-cDirectory=$($bb readlink -f $($bb dirname $0))
-cExitCode=1
-cLog=/tmp/injector.log
-cImgBoot=/tmp/boot.img
-cDirectoryBoot=/tmp/boot_img
-cDirectoryInitrd=$cDirectoryBoot/initrd
-cDirectoryTools=$cDirectory/tools
-cDirectoryDevices=$cDirectory/devices
-cDirectoryInjectors=$cDirectory/injector.d
-cFileBootZImage=$cDirectoryBoot/zImage
-cFileBootInitrd=$cDirectoryBoot/initrd.img
-cFileBootSecond=$cDirectoryBoot/stage2.img
-cFileBootCfg=$cDirectoryBoot/bootimg.cfg
+## 
+# Write any output to the log file
+##
+echo "Starting Injection v.$VERSION" > $LOG
+exec >> $LOG 2>&1
 
-echo "Starting Injection v.$VERSION" > $cLog
-exec >> $cLog 2>&1 
+while true; do
+    while true; do
+        ##
+        # Locate a working busybox version
+        ##
+        for i in /tmp/busybox busybox; do
+            if $i test true; then
+                echo "Using $i as the toolbox for this script"
+                bb=$i
 
-for i in /tmp/busybox busybox; do
-    if $i test true; then
-        echo "Using $i as the toolbox for this script"
-        bb=$i; break
-    fi
-done
+                export CONFIG_BUSYBOX=$bb; break
+            fi
+        done
 
-$bb touch /tmp/injector.prop
-
-iModel=$($bb grep -e "^ro.product.model=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
-iBoard=$($bb grep -e "^ro.product.board=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
-iDevice=$($bb grep -e "^ro.product.device=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
-iPlatform=$($bb grep -e "^ro.board.platform=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
-
-for i in $iPlatform $iBoard $iModel $iDevice; do
-    if $bb [ -f $cDirectoryDevices/${i}.conf ]; then
-        iConfigFile=$cDirectoryDevices/${i}.conf
-    fi
-done
-
-if $bb [ ! -z "$iConfigFile" ]; then
-    while read tLine; do
-        if $bb test ! -z "$tLine" && ! echo "$tLine" | $bb grep -q "#"; then
-            lLineName=$(echo "$tLine" | $bb sed 's/^\([^=]*\)=.*$/\1/' | $bb sed 's/^[ \t]*//' | $bb sed 's/[ \t]*$//')
-            lLineContent="`echo "$tLine" | $bb sed 's/^[^=]*=\(.*\)$/\1/' | $bb sed 's/^[ \t]*//' | $bb sed 's/[ \t]*$//'`"
-
-            eval export "c_$lLineName=\"$lLineContent\""
+        if ! $bb test true || $bb test -z "$CONFIG_BUSYBOX"; then
+            echo "Could not locate any available busybox binaries on this system!"; break 2
         fi
 
-    done < $iConfigFile
+        ##
+        # Assamble some script properties
+        ##
+        export CONFIG_DIR_INJECTOR=$($bb readlink -f $($bb dirname $0))
+        export CONFIG_FILE_BOOTIMG=/tmp/boot.img
+        export CONFIG_DIR_BOOTIMG=/tmp/boot_img
+        export CONFIG_DIR_INITRD=$CONFIG_DIR_BOOTIMG/initrd
+        export CONFIG_FILE_INITRD=$CONFIG_DIR_BOOTIMG/initrd.img
+        export CONFIG_FILE_ZIMAGE=$CONFIG_DIR_BOOTIMG/zImage
+        export CONFIG_FILE_STAGE2=$CONFIG_DIR_BOOTIMG/stage2.img
+        export CONFIG_FILE_CFG=$CONFIG_DIR_BOOTIMG/bootimg.cfg
+        export CONFIG_DIR_TOOLS=$CONFIG_DIR_INJECTOR/tools
+        export CONFIG_DIR_DEVICES=$CONFIG_DIR_INJECTOR/devices
+        export CONFIG_DIR_SCRIPTS=$CONFIG_DIR_INJECTOR/injector.d
 
-    echo "Using $($bb basename $iConfigFile): device($c_device), bs($c_pagesize), base($c_base), cmdline($c_cmdline), script($c_script)"
+        ##
+        # This is used by the updater-script
+        ##
+        $bb test -e /tmp/injector.prop && echo -n "" > /tmp/injector.prop || $bb touch /tmp/injector.prop
 
-    if $bb [ ! -z "$c_script" ]; then
-        $bb test -f $cDirectoryDevices/${c_script} && c_script=$cDirectoryDevices/${c_script} || c_script=$cDirectoryDevices/${c_script}.sh
-    fi
-fi
+        ##
+        # Get the device information
+        ##
+        export CONFIG_DEVICE_MODEL=$($bb grep -e "^ro.product.model=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
+        export CONFIG_DEVICE_BOARD=$($bb grep -e "^ro.product.board=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
+        export CONFIG_DEVICE_NAME=$($bb grep -e "^ro.product.device=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
+        export CONFIG_DEVICE_PLATFORM=$($bb grep -e "^ro.board.platform=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
 
-if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $c_device ]]; then
-    $bb mkdir -p $cDirectoryBoot || $bb mkdir $cDirectoryBoot
-    $bb mkdir -p $cDirectoryInitrd || $bb mkdir $cDirectoryInitrd
+        ##
+        # Load settings from the device configuration file
+        ##
+        for i in $CONFIG_DEVICE_NAME $CONFIG_DEVICE_MODEL $CONFIG_DEVICE_BOARD $CONFIG_DEVICE_PLATFORM; do
+            if $bb [ -f $CONFIG_DIR_DEVICES/$i.conf ]; then
+                export CONFIG_DEVICE_SETTINGS=$CONFIG_DIR_DEVICES/$i.conf
 
-    $bb chmod 0775 $cDirectoryTools/bin/*
-    $bb chmod 0775 $cDirectoryDevices/*.sh
-    $bb chmod 0775 $cDirectoryInjectors/*.sh
+                echo "Using configuration file $i.conf"
 
-    export PATH=$cDirectoryTools/bin:$PATH
+                while read tLine; do
+                    if $bb test ! -z "$tLine" && ! echo "$tLine" | $bb grep -q "#"; then
+                        lLineName=$(echo "$tLine" | $bb sed 's/^\([^=]*\)=.*$/\1/' | $bb sed 's/^[ \t]*//' | $bb sed 's/[ \t]*$//' | $bb tr '[a-z]' '[A-Z]')
+                        lLineContent="`echo "$tLine" | $bb sed 's/^[^=]*=\(.*\)$/\1/' | $bb sed 's/^[ \t]*//' | $bb sed 's/[ \t]*$//'`"
 
-    echo "Extracting the device boot.img"
+                        eval export "SETTINGS_$lLineName=\"$lLineContent\""
+                    fi
 
-    if $bb [ ! -z "$c_script" ]; then
-        $c_script $bb read $cImgBoot $cDirectoryTools; bStatus=$($bb test $? -eq 0)
+                done < $CONFIG_DEVICE_SETTINGS
 
-    else
-        $bb test ! -z "$c_pagesize" && $bb dd if=$c_device of=$cImgBoot bs=$c_pagesize || $bb dd if=$c_device of=$cImgBoot
-    fi
+                if $bb [ -n "$SETTINGS_SCRIPT" ]; then
+                    if $bb [ -e $CONFIG_DIR_DEVICES/$SETTINGS_SCRIPT ]; then
+                        SETTINGS_SCRIPT=$CONFIG_DIR_DEVICES/$SETTINGS_SCRIPT
 
-    if $bStatus && $bb [ -f $cImgBoot ]; then
+                    elif $bb [ -e $CONFIG_DIR_DEVICES/$SETTINGS_SCRIPT.sh ]; then
+                        SETTINGS_SCRIPT=$CONFIG_DIR_DEVICES/$SETTINGS_SCRIPT.sh
+
+                    else
+                        SETTINGS_SCRIPT=
+                    fi
+                fi
+
+                break
+            fi
+        done
+
+        if $bb [ -z "$CONFIG_DEVICE_SETTINGS" ]; then
+            echo "Could not locate any configuration file for this device!"; break
+
+        elif $bb [ -z "$SETTINGS_SCRIPT" ] && $bb [[ -z "$SETTINGS_DEVICE" || ! -e $SETTINGS_DEVICE ]]; then
+            echo "The configuration file $CONFIG_DEVICE_SETTINGS does not contain any valid information about the boot partition!"; break
+        fi
+
+        ##
+        # Prepare our internal dirs and files
+        ##
+        $bb mkdir -p $CONFIG_DIR_BOOTIMG || $bb mkdir $CONFIG_DIR_BOOTIMG
+        $bb mkdir -p $CONFIG_DIR_INITRD || $bb mkdir $CONFIG_DIR_INITRD
+
+        $bb chmod 0775 $CONFIG_DIR_TOOLS/bin/*
+        $bb chmod 0775 $CONFIG_DIR_DEVICES/*.sh
+        $bb chmod 0775 $CONFIG_DIR_SCRIPTS/*.sh
+
+        export PATH=$CONFIG_DIR_TOOLS/bin:$PATH
+
+        ##
+        # Extract the boot.img from the device
+        ##
+        echo "Extracting the device boot.img"
+
+        if $bb [ -n "$SETTINGS_SCRIPT" ]; then
+            if ! $SETTINGS_SCRIPT read; then
+                echo "It was not possible to extract the boot.img from the device!"; break
+            fi
+
+        else
+            if ! $bb dd if=$SETTINGS_DEVICE of=$CONFIG_FILE_BOOTIMG $($bb test -n "$SETTINGS_PAGESIZE" && echo "bs=$SETTINGS_PAGESIZE"); then
+                echo "It was not possible to extract the boot.img from the device!"; break
+            fi
+        fi
+
+        if ! abootimg -i $CONFIG_FILE_BOOTIMG; then
+            echo "The extracted image is not a valid boot.img!"; break
+        fi
+
+        ##
+        # Disassemble the boot.img
+        ##
         bUseAbootimg=false
 
-        echo "Extracting the ramdisk from the boot.img"
+        echo "Disassembling the boot.img"
 
-        if ( cd $cDirectoryBoot && abootimg -x $cImgBoot); then
-            lBootSumOld=$($bb md5sum $cImgBoot | $bb awk '{print $1}')
+        if ( cd $CONFIG_DIR_BOOTIMG && abootimg -x $CONFIG_FILE_BOOTIMG); then
+            lBootSumOld=$($bb md5sum $CONFIG_FILE_BOOTIMG | $bb awk '{print $1}')
 
-            if abootimg -u $cImgBoot -r $cFileBootInitrd -f $cFileBootCfg; then
-                lBootSumNew=$($bb md5sum $cImgBoot | $bb awk '{print $1}')
-                $bb test "$lBootSumOld" = "$lBootSumNew" && bUseAbootimg=true
+            if abootimg -u $CONFIG_FILE_BOOTIMG -r $CONFIG_FILE_INITRD -f $CONFIG_FILE_CFG 1> /dev/null; then
+                if $bb [ "`$bb md5sum $CONFIG_FILE_BOOTIMG | $bb awk '{print $1}'`" = "$lBootSumOld" ]; then
+                    bUseAbootimg=true
+                fi
             fi
 
         else
@@ -123,120 +180,125 @@ if $bb [[ ! -z "$c_script" && -f $c_script ]] || $bb [[ ! -z "$c_device" && -e $
 			# 	$bb dd if=$cImgBoot bs=1 skip=$vOffset of=$vFile
             # done
 
-            unpack-bootimg -i $cImgBoot -o $cDirectoryBoot -k $($bb basename $cFileBootZImage) -r $($bb basename $cFileBootInitrd) -s $($bb basename $cFileBootSecond)
+            if ! unpack-bootimg -i $CONFIG_FILE_BOOTIMG -o $CONFIG_DIR_BOOTIMG -k $($bb basename $CONFIG_FILE_ZIMAGE) -r $($bb basename $CONFIG_FILE_INITRD) -s $($bb basename $CONFIG_FILE_STAGE2); then
+                echo "It was not possible to disassemble the boot.img!"; break
+            fi
         fi
 
-        if $bb [[ -f $cFileBootZImage && -f $cFileBootInitrd ]] && $bb zcat $cFileBootInitrd | ( cd $cDirectoryInitrd && $bb cpio -i ); then
-            
-            echo "Running injector.d scripts"
+        ##
+        # Disassemble initrd
+        ##
+        echo "Disassembling the initrd.img"
 
-            while true; do
-                for lInjectorScript in `$bb find $cDirectoryInjectors -name '*.sh' | sort -n`; do
-                    echo "Running $($bb basename $lInjectorScript)"
+        if ! $bb zcat $CONFIG_FILE_INITRD | ( cd $CONFIG_DIR_INITRD && $bb cpio -i ); then
+            echo "It was not possible to disassemble the initrd.img!"; break
+        fi
 
-                    if ! $lInjectorScript $bb $cDirectoryInitrd $cDirectoryTools; then
-                        echo "The injector.d script $($bb basename $lInjectorScript) failed to execute properly!"; break 2
-                    fi
-                done
+        ##
+        # Execute all of the injector.d scripts
+        ##
+        echo "Running injector scripts"
 
-                echo "Re-assambling the ramdisk"
+        for lInjectorScript in `$bb find $CONFIG_DIR_SCRIPTS -name '*.sh' | sort -n`; do
+            echo "Executing $($bb basename $lInjectorScript)"
 
-                if ! mkbootfs $cDirectoryInitrd | $bb gzip > $cFileBootInitrd; then
-                    ( cd $cDirectoryInitrd && $bb find | $bb sort | $bb cpio -o -H newc ) | $bb gzip > $cFileBootInitrd
+            if ! $lInjectorScript; then
+                echo "The injector.d script $($bb basename $lInjectorScript) failed to execute properly!"; break 2
+            fi
+        done
+
+        ##
+        # Re-assamble initrd.img
+        ##
+        echo "Re-assambling the initrd.img"
+
+        if ! mkbootfs $CONFIG_DIR_INITRD | $bb gzip > $CONFIG_FILE_INITRD; then
+            if ! ( cd $CONFIG_DIR_INITRD && $bb find | $bb sort | $bb cpio -o -H newc ) | $bb gzip > $CONFIG_FILE_INITRD; then
+                echo "It was not possible to Re-assamble the initrd.img!"; break
+            fi
+        fi
+
+        ##
+        # Re-assamble boot.img
+        ##
+        echo "Re-assambling the boot.img"
+
+        if ! $bUseAbootimg || ! abootimg -u $CONFIG_FILE_BOOTIMG -r $CONFIG_FILE_INITRD -f $CONFIG_FILE_CFG; then
+            if $bb [ "$SETTINGS_RECREATE" != "false" ]; then
+                # Abootimg some times fails while updating, and it is not great at creating images from scratch
+                if ! mkbootimg -o $CONFIG_FILE_BOOTIMG --kernel $CONFIG_FILE_ZIMAGE --ramdisk $CONFIG_FILE_INITRD $($bb test -n "$SETTINGS_BASE" && echo "--base") $SETTINGS_BASE $($bb test -n "$SETTINGS_CMDLINE" && echo "--cmdline") "$SETTINGS_CMDLINE" $($bb test -n "$SETTINGS_PAGESIZE" && echo "--pagesize") $SETTINGS_PAGESIZE $($bb test -f $CONFIG_FILE_STAGE2 && echo "--second") $($bb test -f $CONFIG_FILE_STAGE2 && echo $CONFIG_FILE_STAGE2); then
+                    echo "It was not possible to Re-assamble the boot.img!"; break
                 fi
+            fi
+        fi
 
-                if $bb [ $? -eq 0 ]; then
+        if ! abootimg -i $CONFIG_FILE_BOOTIMG; then
+            echo "The new boot.img was corrupted during creation!"; break
+        fi
 
-                    echo "Re-assambling the boot.img"
+        ##
+        # Write boot.img to the device
+        ##
+        echo "Writing the new boot.img to the device"
 
-                    if ! $bUseAbootimg || ! abootimg -u $cImgBoot -r $cFileBootInitrd -f $cFileBootCfg; then
-                        if $bb [ "$c_recreate" != "false" ]; then
-                            mkbootimg -o $cImgBoot --kernel $cFileBootZImage --ramdisk $cFileBootInitrd $($bb test ! -z "$c_base" && echo "--base") $c_base $($bb test ! -z "$c_cmdline" && echo "--cmdline") "$c_cmdline" $($bb test ! -z "$c_pagesize" && echo "--pagesize") $c_pagesize $($bb test -f $cFileBootSecond && echo "--second") $($bb test -f $cFileBootSecond && echo $cFileBootSecond)
-                        fi
-                    fi
-
-                    if $bb [ $? -eq 0 ]; then
-
-                        echo "Writing the new boot.img to the device"
-
-                        if $bb [ ! -z "$c_script" ]; then
-                            $c_script $bb write $cImgBoot $cDirectoryTools
-
-                        else
-                            $bb dd if=$cImgBoot of=$c_device $($bb test ! -z "$c_pagesize" && echo "bs=$c_pagesize")
-                        fi
-
-                        if $bb [ $? -eq 0 ]; then
-                            cExitCode=0
-
-                        else
-                            echo "Failed while writing the new boot.img to the device!"
-                        fi
-
-                    else
-                        echo "Failed while trying to re-assamble the boot.img!"
-                    fi
-
-                else
-                    echo "Failed while trying to re-assamble the ramdisk!"
-                fi
-
-                break
-            done
+        if $bb [ -n "$SETTINGS_SCRIPT" ]; then
+            if ! $SETTINGS_SCRIPT write; then
+                echo "It was not possible to write the boot.img to the device!"; break
+            fi
 
         else
-            echo "Failed while extracting the ramdisk from the boot.img!"
+            if ! $bb dd if=$CONFIG_FILE_BOOTIMG of=$SETTINGS_DEVICE $($bb test -n "$SETTINGS_PAGESIZE" && echo "bs=$SETTINGS_PAGESIZE"); then
+                echo "It was not possible to write the boot.img to the device!"; break
+            fi
         fi
 
-    else
-        echo "Failed while trying to extract the boot.img from the device!"
-    fi
-
-else
-    echo "Missing script or block device!"
-fi
-
-tDevice=/sdcard
-tLocation=$tDevice
-
-for i in /etc/recovery.fstab /recovery.fstab; do
-    if $bb [[ -f $i && "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]]; then
-        tDevice=/data
-        tLocation=/data/media/0
+        EXIT=0
 
         break
+    done
+
+    for i in /etc/recovery.fstab /recovery.fstab; do
+        if $bb [[ -f $i && "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]]; then
+            tDevice=/data
+            tLocation=/data/media/0
+
+            break
+
+        else
+            tDevice=/sdcard
+            tLocation=$tDevice
+        fi
+    done
+
+    if $bb grep -q $tDevice /proc/mounts || $bb mount $tDevice; then
+        if $bb [[ "$SETTINGS_LOCKED" = "true" && -f $CONFIG_FILE_BOOTIMG ]]; then
+            echo "Copying boot.img to the sdcard"
+
+            $bb cp $CONFIG_FILE_BOOTIMG $tLocation/
+
+            echo "locked.message=The boot.img has been copied to the sdcard" >> /tmp/injector.prop
+            echo "locked.status=1" >> /tmp/injector.prop
+        fi
+
+        echo "Copying log file to the sdcard"
+
+        $bb cp $LOG $tLocation/
+
+        echo "log.message=The log file has been copied to the sdcard" >> /tmp/injector.prop
+        echo "log.status=1" >> /tmp/injector.prop
     fi
+
+    echo "Cleaning up old files and directories"
+
+    (
+        # For some reason, the boot.img needs some time before it can be deleted. And it might hang while trying, so do this in a subprocess
+        $bb sleep 1
+
+        $bb rm -rf $CONFIG_DIR_BOOTIMG
+        $bb rm -rf $CONFIG_FILE_BOOTIMG
+    ) & 
+
+    echo "exit.status=$EXIT" >> /tmp/injector.prop && exit $EXIT
+
+    break
 done
-
-echo "Copying log file to the sdcard"
-
-if $bb grep -q $tDevice /proc/mounts || $bb mount $tDevice; then
-    if $bb [ "$c_locked" = "true" ]; then
-        echo "Copying boot.img to the sdcard"
-
-        $bb cp $cImgBoot $tLocation/
-
-        echo "locked.message=The boot.img has been copied to the sdcard" >> /tmp/injector.prop
-        echo "locked.status=1" >> /tmp/injector.prop
-    fi
-
-    $bb cp $cLog $tLocation/
-
-    echo "log.message=The log file has been copied to the sdcard" >> /tmp/injector.prop
-    echo "log.status=1" >> /tmp/injector.prop  
-fi
-
-echo "Cleaning up old files and directories"
-
-$bb rm -rf $cDirectoryBoot
-
-(
-    # For some reason, the boot.img needs some time before it can be deleted. And it might hang while trying, so do this in a subprocess
-    $bb sleep 3
-
-    $bb rm -rf $cImgBoot
-) & 
-
-echo "exit.status=$cExitCode" >> /tmp/injector.prop
-
-exit $cExitCode

@@ -20,19 +20,15 @@
 
 ## Samsung Galaxy S
 
-bb=$1
-iAction=$2
-iBootimg=$3
-
-case "$iAction" in 
+case "$1" in 
     read)
-        if $bb dd if=/dev/bml7 of=$iBootimg; then
+        if $CONFIG_BUSYBOX dd if=/dev/bml7 of=$CONFIG_FILE_BOOTIMG; then
             exit 0
         fi
     ;;
 
     write)
-        if bmlunlock && $bb dd if=$iBootimg of=/dev/block/bml7; then
+        if bmlunlock && $CONFIG_BUSYBOX dd if=$CONFIG_FILE_BOOTIMG of=/dev/block/bml7; then
             exit 0
         fi
     ;;

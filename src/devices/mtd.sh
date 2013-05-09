@@ -18,30 +18,15 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-$bb=$1
-iAction=$2
-iBootimg=$3
-iDevice=$($bb grep boot /proc/mtd | $bb sed 's/^\(.*\):.*/\1/')
-
-if $bb [[ -z "$iDevice" || ! -e /dev/mtd/$iDevice ]]; then
-    iDevice=mtd2
-fi
-
-if $bb [[ ! -c /dev/mtd/$iDevice && ! -b /dev/mtd/$iDevice ]]; then
-    echo "Failed! /dev/mtd/$iDevice is not a device path"; exit 1
-fi
-
-case "$iAction" in 
+case "$1" in 
     read)
-        if $bb dd if=/dev/mtd/$iDevice of=$iBootimg bs=4096; then
-            $bb cp $iBootimg ${iBootimg}.old
-
+        if dump_image boot $CONFIG_FILE_BOOTIMG; then
             exit 0
         fi
     ;;
 
     write)
-        if $bb test -f $iBootimg && $bb dd if=$iBootimg of=/dev/mtd/$iDevice bs=4096; then
+        if flash_image boot $CONFIG_FILE_BOOTIMG; then
             exit 0
         fi
     ;;
