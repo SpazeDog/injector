@@ -71,6 +71,12 @@ Supported Devices
 * Totoro
     * Samsung Galaxy Y S5360
 
+* EMMC
+    * Most EMMC devies besides the once on the list
+
+* MTD
+    * Most MTD devies besides the once on the list
+
 Example
 ------
 Let's create a simple package that removes init.cm.rc
