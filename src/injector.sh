@@ -77,7 +77,7 @@ while true; do
         ##
         # Load settings from the device configuration file
         ##
-        for i in $CONFIG_DEVICE_NAME $CONFIG_DEVICE_MODEL $CONFIG_DEVICE_BOARD $CONFIG_DEVICE_PLATFORM; do
+        for i in $CONFIG_DEVICE_NAME $CONFIG_DEVICE_MODEL $CONFIG_DEVICE_BOARD $CONFIG_DEVICE_PLATFORM global; do
             if $bb [ -f $CONFIG_DIR_DEVICES/$i.conf ]; then
                 export CONFIG_DEVICE_SETTINGS=$CONFIG_DIR_DEVICES/$i.conf
 
