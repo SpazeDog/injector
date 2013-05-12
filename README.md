@@ -20,6 +20,9 @@ Supported Devices
 * Marvel
     * HTC Wildfire S
 
+* Chacha
+    * HTC Chacha
+
 * Spade
     * HTC Desire HD
 
