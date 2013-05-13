@@ -39,7 +39,16 @@ elif [ -e "$OUTPUT" ]; then
 fi
 
 mv $FOLDER META-INF
-zip -9 -r $OUTPUT META-INF src busybox
+
+if [ "$TYPE" = "aroma" ]; then
+    ( cd src && zip -9 -r ../src.zip . )
+    zip -9 -r $OUTPUT META-INF src.zip busybox
+    rm -rf src.zip
+
+else
+    zip -9 -r $OUTPUT META-INF src busybox
+fi
+
 mv META-INF $FOLDER
 
 echo "Created $OUTPUT"

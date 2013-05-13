@@ -34,7 +34,7 @@ while true; do
         ##
         # Locate a working busybox version
         ##
-        for i in /tmp/busybox busybox; do
+        for i in /tmp/busybox /tmp/aroma-data/busybox busybox; do
             if $i test true; then
                 echo "Using $i as the toolbox for this script"
                 bb=$i

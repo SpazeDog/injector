@@ -62,25 +62,20 @@ else
     endif;
 endif;
 
-writetmpfile("installation.prop", "inject.action=" + getvar("inject.action") + "\n");
+pleasewait("Unpacking installer package...");
 
-ini_set("text_next", "View Log");
+if
+    ziptotmp("busybox", "busybox") && ziptotmp("src.zip", "src.zip")
+then
+    pleasewait("Extracting source files...");
 
-setvar("status",
-    install(
-	    # -- Headline -- #
-	    "Running the Injector",
-
-	    # -- Title -- #
-	    "<b>" + getvar("inject.message") + "...\nPlease Wait Until it Finishes...</b>",
-
-	    # -- Icon -- #
-	    "@install",
-
-	    # -- Complete Title -- #
-	    "<b>The Injector has completed!</b>"
-    )
-);
+    if
+        exec("/tmp/aroma-data/busybox", "mkdir", "/tmp/aroma-data/injector") && exec("/tmp/aroma-data/busybox", "unzip", "/tmp/aroma-data/src.zip", "-d", "/tmp/aroma-data/injector") && exec("/tmp/aroma-data/busybox", "chmod", "0775", "/tmp/aroma-data/injector/injector.sh")
+    then
+        pleasewait("Running Injector...");
+        exec("/tmp/aroma-data/injector/injector.sh", getvar("inject.action"));
+    endif;
+endif;
 
 ini_set("text_next", "Exit");
 
