@@ -1,0 +1,30 @@
+##
+#
+##
+
+ui_print("@    Unpacking Injector files");
+package_extract_dir("src", "/tmp/injector");
+package_extract_file("busybox", "/tmp/busybox");
+
+ui_print("@    Running the Injector");
+set_perm(0, 0, 0775, "/tmp/busybox");
+set_perm(0, 0, 0775, "/tmp/injector/injector.sh");
+run_program("/tmp/injector/injector.sh", file_getprop("/tmp/aroma/installation.prop", "inject.action"));
+
+ui_print(" ");
+
+if
+    file_getprop("/tmp/injector.prop", "exit.status") != "0"
+then
+    ui_print("@    The injector did not run successfully! See injector.log in the primary storage for further information.");
+endif;
+
+if
+    file_getprop("/tmp/injector.prop", "exit.message") != ""
+then
+    ui_print("@    " + file_getprop("/tmp/injector.prop", "exit.message"));
+endif;
+
+ui_print(" ");
+ui_print("Done!");
+

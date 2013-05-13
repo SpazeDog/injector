@@ -1,0 +1,100 @@
+﻿### LICENSE:
+#
+# Copyright (C) 2011 Ahmad Amarullah ( http://amarullz.com/ )
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+### FILE INFO:
+#
+# AROMA Installer 2.51 - AROMA Installer Test Script Configuration
+#       (c) 2011-2012 by Ahmad Amarullah
+#           amarullz - xda-developers
+#           http://www.amarullz.com/
+#
+#       Binary Version  : 2.56
+#       Binary Codename : Edelweis
+#
+### INFO:
+
+ini_set("text_next", "Start Injector");
+
+selectbox(
+    "Select Action", "Please select an action for the Injector",
+
+    "@install",
+
+    "action.prop",
+
+    "Inject boot partition",               "Extract, inject and reflash the current boot.img",                                1,    #-- selected.0 = 1
+    "Inject and store current boot.img",   "Extract, inject and store the current boot.img to the primary storage",            0,    #-- selected.0 = 2
+    "Inject stored boot.img",              "Inject a boot.img stored in Injector/ on the primary storage",                      0,    #-- selected.0 = 3
+    "Inject and Flash stored boot.img",    "Inject and flash a boot.img stored in Injector/ on the primary storage",            0     #-- selected.0 = 4
+);
+
+if prop("action.prop", "selected.0")=="1" then
+    setvar("inject.message", "Injecting the boot partition");
+    setvar("inject.action", "inject-flash-current");
+
+else
+    if prop("action.prop", "selected.0")=="2" then
+        setvar("inject.message", "Injecting the extracted boot partition and storing it");
+        setvar("inject.action", "inject-store-current");
+
+    else
+        if prop("action.prop", "selected.0")=="3" then
+            setvar("inject.message", "Injecting stored boot.img");
+            setvar("inject.action", "inject-stored");
+
+        else
+            setvar("inject.message", "Injecting and flashing stored boot.img");
+            setvar("inject.action", "inject-flash-stored");
+        endif;
+    endif;
+endif;
+
+writetmpfile("installation.prop", "inject.action=" + getvar("inject.action") + "\n");
+
+ini_set("text_next", "View Log");
+
+setvar("status",
+    install(
+	    # -- Headline -- #
+	    "Running the Injector",
+
+	    # -- Title -- #
+	    "<b>" + getvar("inject.message") + "...\nPlease Wait Until it Finishes...</b>",
+
+	    # -- Icon -- #
+	    "@install",
+
+	    # -- Complete Title -- #
+	    "<b>The Injector has completed!</b>"
+    )
+);
+
+ini_set("text_next", "Exit");
+
+textbox(
+	# -- Headline -- #
+	"Injector Log",
+
+    "<b>Log output from the Injector</b>",
+
+	# -- Icon -- #
+	"@info",
+
+	# -- Text -- #
+	read("/tmp/injector.log")
+);
+
+reboot("disable");
