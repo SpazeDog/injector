@@ -33,17 +33,36 @@ fi
 
 case "$1" in 
     read)
-        if $CONFIG_BUSYBOX [[ -e "$lDevice" || "$lDevice" = "boot" ]]; then
-            if dump_image $lDevice $CONFIG_FILE_BOOTIMG; then
-                exit 0
+        # BML devices has the /proc/mtd file, but not the /dev/mtd directory
+        if $CONFIG_BUSYBOX [[ ! -e /proc/mtd || -d /dev/mtd ]]; then
+            if $CONFIG_BUSYBOX [[ -e "$lDevice" || "$lDevice" = "boot" ]]; then
+                if dump_image $lDevice $CONFIG_FILE_BOOTIMG; then
+                    exit 0
+                fi
+            fi
+
+        else
+            if $CONFIG_BUSYBOX [ -e "$lDevice" ]; then
+                if $CONFIG_BUSYBOX dd if=$lDevice of=$CONFIG_FILE_BOOTIMG; then
+                    exit 0
+                fi
             fi
         fi
     ;;
 
     write)
-        if $CONFIG_BUSYBOX [[ -e "$lDevice" || "$lDevice" = "boot" ]]; then
-            if flash_image $lDevice $CONFIG_FILE_BOOTIMG; then
-                exit 0
+        if $CONFIG_BUSYBOX [[ ! -e /proc/mtd || -d /dev/mtd ]]; then
+            if $CONFIG_BUSYBOX [[ -e "$lDevice" || "$lDevice" = "boot" ]]; then
+                if flash_image $lDevice $CONFIG_FILE_BOOTIMG; then
+                    exit 0
+                fi
+            fi
+
+        else
+            if $CONFIG_BUSYBOX [ -e "$lDevice" ]; then
+                if bmlunlock && $CONFIG_BUSYBOX dd if=$CONFIG_FILE_BOOTIMG of=$lDevice; then
+                    exit 0
+                fi
             fi
         fi
     ;;
