@@ -9,19 +9,25 @@ The one problem with Android when it comes to customization, is the Ramdisk. You
 
 Injector is a recovery script that enables you to modify the ramdisk on multiple devices, without having to worry about creating device specific code. The injector will extract the ramdisk for you, and it will write it back to the boot partition once you are done. All you have to do, is create any script that does whatever work you need it to do, place it in the injector.d folder, compress the updater archive and upload. 
 
+Creating recovery package
+------
+If you are creating a legacy package, rename `META-INF_Legacy` to `META-INF` and create a ZIP containing `META-INF/`, `src/` and `busybox`. To create an Aroma package, you need to rename `META-INF_Aroma` to `META-INF`, compress `src/` into a zip and then create a ZIP containing `META-INF/`, `src.zip` and `busybox`.
+
+If you are using a *nix operating system, you can just use the `make.sh` file to create your packages. Just execute `./make.sh <package name> <legacy or aroma>`
+
 Supported Devices
 ------
 
 * QSD8K
     * HTC Desire GSM `Tested`
-    * HTC Desire CDMA
+    * HTC Desire CDMA `Tested`
     * HTC Nexus One `Tested`
 
 * Marvel
     * HTC Wildfire S
 
 * Chacha
-    * HTC Chacha
+    * HTC Chacha `Tested`
 
 * Spade
     * HTC Desire HD
@@ -69,13 +75,16 @@ Supported Devices
     * Samsung Galaxy S 4 I9505 LTE
 
 * Totoro
-    * Samsung Galaxy Y S5360
+    * Samsung Galaxy Y S5360 `Tested`
 
 * EMMC
     * Most EMMC devies besides the once on the list
 
 * MTD
     * Most MTD devies besides the once on the list
+
+* BML
+    * Most BML devies besides the once on the list
 
 Example
 ------
