@@ -75,6 +75,15 @@ while true; do
         export CONFIG_DEVICE_NAME=$($bb grep -e "^ro.product.device=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
         export CONFIG_DEVICE_PLATFORM=$($bb grep -e "^ro.board.platform=" /default.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
 
+        if $bb [[ -z "$CONFIG_DEVICE_MODEL" && -z "$CONFIG_DEVICE_BOARD" && -z "$CONFIG_DEVICE_NAME" && -z "$CONFIG_DEVICE_PLATFORM" ]]; then
+            if $bb grep -q '/system' /proc/mounts || $bb mount /system; then
+                export CONFIG_DEVICE_MODEL=$($bb grep -e "^ro.product.model=" /system/build.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
+                export CONFIG_DEVICE_BOARD=$($bb grep -e "^ro.product.board=" /system/build.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
+                export CONFIG_DEVICE_NAME=$($bb grep -e "^ro.product.device=" /system/build.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
+                export CONFIG_DEVICE_PLATFORM=$($bb grep -e "^ro.board.platform=" /system/build.prop | $bb sed 's/^.*=\(.*\)$/\1/' | $bb tr '[A-Z]' '[a-z]' | $bb sed 's/ /_/g')
+            fi
+        fi
+
         ##
         # Load settings from the device configuration file
         ##
