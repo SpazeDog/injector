@@ -18,11 +18,7 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-bb=$1
-ramdisk=$2
-tools=$3
-
 ## Add something to the ramdisk
-# $bb cp <something> $ramdisk/
+# $CONFIG_BUSYBOX cp <something> $CONFIG_DIR_INITRD/
 
 exit 0

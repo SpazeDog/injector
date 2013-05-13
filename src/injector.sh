@@ -21,11 +21,12 @@
 VERSION=0.2.2
 LOG=/tmp/injector.log
 EXIT=1
+ACTION=$1
 
 ## 
 # Write any output to the log file
 ##
-echo "Starting Injection v.$VERSION" > $LOG
+echo "Starting Injector v.$VERSION" > $LOG
 exec >> $LOG 2>&1
 
 while true; do
@@ -135,8 +136,34 @@ while true; do
         fi
 
         ##
+        # Prepare the primary storage
+        ##
+        for i in /etc/recovery.fstab /recovery.fstab; do
+            if $bb [[ -f $i && "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]]; then
+                if $bb grep -q '/data' /proc/mounts || $bb mount /data; then
+                    export CONFIG_STORAGE=/data/media/0; break
+                fi
+
+            elif [ -f $i ]; then
+                if $bb grep -q '/sdcard' /proc/mounts || $bb mount /sdcard; then
+                    export CONFIG_STORAGE=/sdcard; break
+                fi
+            fi
+        done
+
+        if $bb [ -z "$CONFIG_STORAGE" ] && $bb [ "$ACTION" != "inject-flash-current" ]]; then
+            echo "It was not possible to mount the parimary storage!"
+        fi
+
+        lFileStoredBootimg=$CONFIG_STORAGE/Injector/boot.img
+
+        ##
         # Prepare our internal dirs and files
         ##
+        if $bb [[ -n "$CONFIG_STORAGE" && ! -d $CONFIG_STORAGE/Injector ]]; then
+            $bb mkdir -p $CONFIG_STORAGE/Injector || $bb mkdir $CONFIG_STORAGE/Injector
+        fi
+
         $bb mkdir -p $CONFIG_DIR_BOOTIMG || $bb mkdir $CONFIG_DIR_BOOTIMG
         $bb mkdir -p $CONFIG_DIR_INITRD || $bb mkdir $CONFIG_DIR_INITRD
 
@@ -149,20 +176,29 @@ while true; do
         ##
         # Extract the boot.img from the device
         ##
-        echo "Extracting the device boot.img"
+        if $bb [[ "$ACTION" = "inject-stored" || "$ACTION" = "inject-flash-stored" ]]; then
+            echo "Extracting the boot.img from $lFileStoredBootimg"
 
-        if $SETTINGS_ACTIONS_READ && ! $SETTINGS_SCRIPT read; then
-            echo "It was not possible to extract the boot.img from the device!"; break
+            if $bb [ ! -f $lFileStoredBootimg ] || ! $bb cp $lFileStoredBootimg $CONFIG_FILE_BOOTIMG; then
+                echo "It was not possible to extract the boot.img from the storage!"; break
+            fi
 
-        elif ! $SETTINGS_ACTIONS_READ && ! dump_image $SETTINGS_DEVICE $CONFIG_FILE_BOOTIMG; then
-            echo "It was not possible to extract the boot.img from the device!"; break
-        fi
+        else
+            echo "Extracting the device boot.img"
 
-        if $SETTINGS_ACTIONS_VALIDATE && ! $SETTINGS_SCRIPT validate; then
-            echo "The extracted image is not a valid boot.img!"; break
+            if $SETTINGS_ACTIONS_READ && ! $SETTINGS_SCRIPT read; then
+                echo "It was not possible to extract the boot.img from the device!"; break
 
-        elif ! $SETTINGS_ACTIONS_VALIDATE && ! abootimg -i $CONFIG_FILE_BOOTIMG; then
-            echo "The extracted image is not a valid boot.img!"; break
+            elif ! $SETTINGS_ACTIONS_READ && ! dump_image $SETTINGS_DEVICE $CONFIG_FILE_BOOTIMG; then
+                echo "It was not possible to extract the boot.img from the device!"; break
+            fi
+
+            if $SETTINGS_ACTIONS_VALIDATE && ! $SETTINGS_SCRIPT validate; then
+                echo "The extracted image is not a valid boot.img!"; break
+
+            elif ! $SETTINGS_ACTIONS_VALIDATE && ! abootimg -i $CONFIG_FILE_BOOTIMG; then
+                echo "The extracted image is not a valid boot.img!"; break
+            fi
         fi
 
         ##
@@ -245,24 +281,43 @@ while true; do
         ##
         # Write boot.img to the device
         ##
-        echo "Writing the new boot.img to the device"
+        if $bb [[ "$ACTION" = "inject-flash-current" || "$ACTION" = "inject-flash-stored" ]]; then
+            echo "Writing the new boot.img to the device"
 
-        if $SETTINGS_ACTIONS_WRITE; then
-            if ! $SETTINGS_SCRIPT write; then
-                echo "It was not possible to write the boot.img to the device!"
+            if $SETTINGS_ACTIONS_WRITE; then
+                if ! $SETTINGS_SCRIPT write; then
+                    echo "It was not possible to write the boot.img to the device!"
 
-                if $bb [ "$SETTINGS_LOCKED" != "true" ]; then
-                    break
+                    if $bb [ "$SETTINGS_LOCKED" != "true" ]; then
+                        break
+                    fi
+                fi
+
+            else
+                if ! erase_image $SETTINGS_DEVICE || ! flash_image $SETTINGS_DEVICE $CONFIG_FILE_BOOTIMG; then
+                    echo "It was not possible to write the boot.img to the device!"
+
+                    if $bb [ "$SETTINGS_LOCKED" != "true" ]; then
+                        break
+
+                    else
+                        if $bb cp $CONFIG_FILE_BOOTIMG $lFileStoredBootimg; then
+                            echo "The boot.img was moved to $lFileStoredBootimg. Use 'fastboot flash boot boot.img' to flash it to your boot partition"
+                            echo "exit.message=The boot.img was moved to $lFileStoredBootimg. Use 'fastboot flash boot boot.img' to flash it to your boot partition" >> /tmp/injector.prop
+                        fi
+                    fi
                 fi
             fi
 
         else
-            if ! erase_image $SETTINGS_DEVICE || ! flash_image $SETTINGS_DEVICE $CONFIG_FILE_BOOTIMG; then
-                echo "It was not possible to write the boot.img to the device!"
+            echo "Moving the boot.img to the primary storage"
 
-                if $bb [ "$SETTINGS_LOCKED" != "true" ]; then
-                    break
-                fi
+            if ! $bb cp $CONFIG_FILE_BOOTIMG $lFileStoredBootimg; then
+                echo "It was not possible to move the boot.img to the primary storage!"; break
+
+            else
+                echo "The boot.img was moved to $lFileStoredBootimg"
+                echo "exit.message=The boot.img was moved to $lFileStoredBootimg" >> /tmp/injector.prop
             fi
         fi
 
@@ -271,35 +326,9 @@ while true; do
         break
     done
 
-    for i in /etc/recovery.fstab /recovery.fstab; do
-        if $bb [[ -f $i && "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]]; then
-            tDevice=/data
-            tLocation=/data/media/0
-
-            break
-
-        else
-            tDevice=/sdcard
-            tLocation=$tDevice
-        fi
-    done
-
-    if $bb grep -q $tDevice /proc/mounts || $bb mount $tDevice; then
-        if $bb [[ "$SETTINGS_LOCKED" = "true" && -f $CONFIG_FILE_BOOTIMG ]]; then
-            echo "Copying boot.img to the sdcard"
-
-            $bb cp $CONFIG_FILE_BOOTIMG $tLocation/
-
-            echo "locked.message=The boot.img has been copied to the sdcard" >> /tmp/injector.prop
-            echo "locked.status=1" >> /tmp/injector.prop
-        fi
-
-        echo "Copying log file to the sdcard"
-
-        $bb cp $LOG $tLocation/
-
-        echo "log.message=The log file has been copied to the sdcard" >> /tmp/injector.prop
-        echo "log.status=1" >> /tmp/injector.prop
+    if $bb [ -n "$CONFIG_STORAGE" ]; then
+        echo "Moving log file to $CONFIG_STORAGE/Injector/injector.log"
+        $bb cp $LOG $CONFIG_STORAGE/Injector/
     fi
 
     echo "Cleaning up old files and directories"
