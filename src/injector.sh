@@ -342,15 +342,13 @@ while true; do
 
     echo "Cleaning up old files and directories"
 
-    (
-        # For some reason, the boot.img needs some time before it can be deleted. And it might hang while trying, so do this in a subprocess
-        $bb sleep 1
+    # For some reason, the boot.img needs some time before it can be deleted. And it might hang while trying, so do this in a subprocess
+    $bb sleep 1
 
-        $bb rm -rf $CONFIG_DIR_BOOTIMG
-        $bb rm -rf $CONFIG_FILE_BOOTIMG
-    ) & 
-
-    echo "exit.status=$EXIT" >> /tmp/injector.prop && exit $EXIT
+    $bb rm -rf $CONFIG_DIR_BOOTIMG
+    $bb rm -rf $CONFIG_FILE_BOOTIMG
 
     break
 done
+
+echo "exit.status=$EXIT" >> /tmp/injector.prop && exit $EXIT
