@@ -18,7 +18,7 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-## Samsung Galaxy S
+## Samsung Galaxy Y
 
 case "$1" in 
     read)
