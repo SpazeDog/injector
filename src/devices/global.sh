@@ -20,15 +20,20 @@
 
 ## A global config file for devices not added to the support tree
 
-if $CONFIG_BUSYBOX [ -e /proc/mtd ]; then
+if $CONFIG_BUSYBOX [[ -e /proc/mtd && -d /dev/mtd ]]; then
     lDevice=boot
 
 else
     for i in /recovery.fstab /etc/recovery.fstab; do
         if $CONFIG_BUSYBOX [ -e $i ]; then
-            $lDevice=$($CONFIG_BUSYBOX grep '/boot' $i | $CONFIG_BUSYBOX awk '{print $3}'); break
+            lDevice=$($CONFIG_BUSYBOX grep '/boot' $i | $CONFIG_BUSYBOX awk '{print $3}'); break
         fi
     done
+
+    # If we have an BML device where the boot entry is missing in recovery.fstab
+    if $CONFIG_BUSYBOX [[ -z "$lDevice" || ! -e $lDevice ]] && $CONFIG_BUSYBOX [ -e /dev/block/bml7 ]; then
+        lDevice=/dev/block/bml7
+    fi
 fi
 
 case "$1" in 
