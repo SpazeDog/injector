@@ -18,7 +18,7 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-VERSION=0.2.4
+VERSION=0.2.5
 LOG=/tmp/injector.log
 EXIT=1
 ACTION=$1
