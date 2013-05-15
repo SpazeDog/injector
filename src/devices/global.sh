@@ -79,6 +79,45 @@ case "$1" in
             exit 0
         fi
     ;;
+
+    disassemble)
+        if $CONFIG_BUSYBOX [ -d $CONFIG_DIR_INITRD.base ]; then
+            $CONFIG_BUSYBOX rm -rf $CONFIG_DIR_INITRD.base/*
+
+        else
+            $CONFIG_BUSYBOX mkdir $CONFIG_DIR_INITRD.base
+        fi
+
+        if $CONFIG_BUSYBOX zcat $CONFIG_FILE_INITRD | ( cd $CONFIG_DIR_INITRD.base && $CONFIG_BUSYBOX cpio -i ); then
+            if $CONFIG_BUSYBOX [ -L $CONFIG_DIR_INITRD.base/init ]; then
+                if [ -f $CONFIG_DIR_INITRD.base/sbin/ramdisk.cpio ]; then
+                    if $CONFIG_BUSYBOX cat $CONFIG_DIR_INITRD.base/sbin/ramdisk.cpio | ( cd $CONFIG_DIR_INITRD && $CONFIG_BUSYBOX cpio -i ); then
+                        exit 0
+                    fi
+                fi
+
+            else
+                if $CONFIG_BUSYBOX mv $CONFIG_DIR_INITRD.base $CONFIG_DIR_INITRD; then
+                    exit 0
+                fi
+            fi
+        fi
+    ;;
+
+    assemble)
+        if $CONFIG_BUSYBOX [ -d $CONFIG_DIR_INITRD.base ]; then
+            if mkbootfs $CONFIG_DIR_INITRD > $CONFIG_DIR_INITRD.base/sbin/ramdisk.cpio; then
+                if mkbootfs $CONFIG_DIR_INITRD.base | $bb gzip > $CONFIG_FILE_INITRD; then
+                    $CONFIG_BUSYBOX rm -rf $CONFIG_DIR_INITRD.base; exit 0
+                fi
+            fi
+
+        else
+            if mkbootfs $CONFIG_DIR_INITRD | $bb gzip > $CONFIG_FILE_INITRD; then
+                exit 0
+            fi
+        fi
+    ;;
 esac
 
 exit 1
