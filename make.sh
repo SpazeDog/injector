@@ -1,7 +1,12 @@
 #!/bin/bash
 
 OUTPUT="$1"
-TYPE=$(test -n "$2" && echo "$2" || echo "aroma")
+MODULE=$(test -n "$2" && echo "$2" || echo "template")
+TYPE=$(test -n "$3" && echo "$3" || echo "aroma")
+
+if [ ! -d modules/$MODULE ]; then
+    echo "The module $MODULE does not exist!"; exit 1
+fi
 
 case "$TYPE" in
     aroma)
@@ -13,7 +18,7 @@ case "$TYPE" in
     ;;
 
     *)
-        echo "Usage: ./make.sh <output file> <aroma/legacy>"; exit 1
+        echo "Usage: ./make.sh <output file> <module> <aroma/legacy>"; exit 1
     ;;
 esac
 
@@ -38,17 +43,23 @@ elif [ -e "$OUTPUT" ]; then
     echo "Can't override $OUTPUT"; exit 1
 fi
 
-mv $FOLDER META-INF
+tFolder=".$(basename "$OUTPUT" | sed 's/ /_/')"
+OUTPUT=$(readlink -f "$OUTPUT")
+
+mkdir $tFolder
+cp -a $FOLDER $tFolder/META-INF
+cp -a src $tFolder/src
+cp -a modules/$MODULE/* $tFolder/src/injector.d/
+cp busybox $tFolder/busybox
 
 if [ "$TYPE" = "aroma" ]; then
-    ( cd src && zip -9 -r ../src.zip . )
-    zip -9 -r $OUTPUT META-INF src.zip busybox
-    rm -rf src.zip
+    ( cd $tFolder/src && zip -9 -r ../src.zip . )
+    ( cd $tFolder && zip -9 -r "$OUTPUT" META-INF src.zip busybox )
 
 else
-    zip -9 -r $OUTPUT META-INF src busybox
+    ( cd $tFolder && zip -9 -r "$OUTPUT" META-INF src busybox )
 fi
 
-mv META-INF $FOLDER
+rm -rf $tFolder
 
 echo "Created $OUTPUT"
