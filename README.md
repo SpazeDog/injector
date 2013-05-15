@@ -77,6 +77,10 @@ Supported Devices
 * Totoro
     * Samsung Galaxy Y S5360 `Tested`
 
+* Mogami
+    * Sony Ericsson Experia Mini
+    * Sony Ericsson Experia Mini Pro
+
 * EMMC
     * Most EMMC devies besides the once on the list
 
