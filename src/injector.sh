@@ -233,7 +233,7 @@ while true; do
             if $SETTINGS_ACTIONS_DISASSEMBLE && ! $SETTINGS_SCRIPT disassemble; then
                 echo "It was not possible to disassemble the initrd.img!"; break
 
-            elif ! $SETTINGS_ACTIONS_DISASSEMBLE && ! $bb zcat $CONFIG_FILE_INITRD | ( cd $CONFIG_DIR_INITRD && $bb cpio -i ); then
+            elif ! $SETTINGS_ACTIONS_DISASSEMBLE && ! ( $bb gunzip < $CONFIG_FILE_INITRD > $CONFIG_FILE_INITRD.cpio && ( cd $CONFIG_DIR_INITRD && $bb cpio -i < $CONFIG_FILE_INITRD.cpio ) ); then
                 echo "It was not possible to disassemble the initrd.img!"; break
             fi
 
@@ -258,8 +258,8 @@ while true; do
             if $SETTINGS_ACTIONS_ASSEMBLE && ! $SETTINGS_SCRIPT assemble; then
                 echo "It was not possible to Re-assamble the initrd.img!"; break
 
-            elif ! $SETTINGS_ACTIONS_ASSEMBLE && ! mkbootfs $CONFIG_DIR_INITRD | $bb gzip > $CONFIG_FILE_INITRD; then
-                if ! ( cd $CONFIG_DIR_INITRD && $bb find | $bb sort | $bb cpio -o -H newc ) | $bb gzip > $CONFIG_FILE_INITRD; then
+            elif ! $SETTINGS_ACTIONS_ASSEMBLE && ! ( mkbootfs $CONFIG_DIR_INITRD > $CONFIG_FILE_INITRD.cpio && $bb gzip < $CONFIG_FILE_INITRD.cpio > $CONFIG_FILE_INITRD ); then
+                if ! ( ( cd $CONFIG_DIR_INITRD && $bb find | $bb sort | $bb cpio -o -H newc > $CONFIG_FILE_INITRD.cpio ) && $bb gzip < $CONFIG_FILE_INITRD.cpio > $CONFIG_FILE_INITRD ); then
                     echo "It was not possible to Re-assamble the initrd.img!"; break
                 fi
             fi
@@ -347,7 +347,7 @@ while true; do
     # For some reason, the boot.img needs some time before it can be deleted. And it might hang while trying, so do this in a subprocess
     $bb sleep 1
 
-    $bb rm -rf $CONFIG_DIR_BOOTIMG
+    #$bb rm -rf $CONFIG_DIR_BOOTIMG
     $bb rm -rf $CONFIG_FILE_BOOTIMG
 
     break
