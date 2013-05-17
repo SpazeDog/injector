@@ -49,6 +49,11 @@ OUTPUT=$(readlink -f "$OUTPUT")
 mkdir $tFolder
 cp -a $FOLDER $tFolder/META-INF
 cp -a src $tFolder/src
+
+if [ ! -d $tFolder/src/injector.d ]; then
+    mkdir $tFolder/src/injector.d
+fi
+
 cp -a modules/$MODULE/* $tFolder/src/injector.d/
 cp busybox $tFolder/busybox
 
