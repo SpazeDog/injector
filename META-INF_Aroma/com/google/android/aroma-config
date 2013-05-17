@@ -69,6 +69,8 @@ else
     endif;
 endif;
 
+setvar("exit.icon", "alert");
+
 pleasewait("Unpacking installer package...");
 
 if
@@ -81,6 +83,12 @@ then
     then
         pleasewait("Running Injector...");
         exec("/tmp/aroma-data/injector/injector.sh", getvar("inject.action"));
+
+        if
+            file_getprop("/tmp/injector.prop", "exit.status") == "0"
+        then
+            setvar("exit.icon", "done");
+        endif;
     endif;
 endif;
 
@@ -93,7 +101,7 @@ textbox(
     "<b>Log output from the Injector</b>",
 
 	# -- Icon -- #
-	"@info",
+	"@" + getvar("exit.icon"),
 
 	# -- Text -- #
 	read("/tmp/injector.log")
