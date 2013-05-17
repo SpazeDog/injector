@@ -237,6 +237,10 @@ while true; do
                 echo "It was not possible to disassemble the initrd.img!"; break
             fi
 
+            if $bb [[ ! -e $CONFIG_DIR_INITRD/init || ! -e $CONFIG_DIR_INITRD/init.rc ]]; then
+                echo "The disassembled initrd.img is corrupted!"; break
+            fi
+
             ##
             # Execute all of the injector.d scripts
             ##
