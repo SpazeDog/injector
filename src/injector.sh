@@ -185,7 +185,7 @@ while true; do
         ##
         # Extract the boot.img from the device
         ##
-        if $bb [[ "$ACTION" = "inject-stored" || "$ACTION" = "inject-flash-stored" ]]; then
+        if $bb [[ "$ACTION" = "inject-stored" || "$ACTION" = "inject-flash-stored" || "$ACTION" = "flash-stored" ]]; then
             echo "Extracting the boot.img from $lFileStoredBootimg"
 
             if $bb [ ! -f $lFileStoredBootimg ] || ! $bb cp $lFileStoredBootimg $CONFIG_FILE_BOOTIMG; then
@@ -201,81 +201,83 @@ while true; do
             elif ! $SETTINGS_ACTIONS_READ && ! dump_image $SETTINGS_DEVICE $CONFIG_FILE_BOOTIMG; then
                 echo "It was not possible to extract the boot.img from the device!"; break
             fi
-
-            if $SETTINGS_ACTIONS_VALIDATE && ! $SETTINGS_SCRIPT validate; then
-                echo "The extracted image is not a valid boot.img!"; break
-
-            elif ! $SETTINGS_ACTIONS_VALIDATE && ! abootimg -i $CONFIG_FILE_BOOTIMG; then
-                echo "The extracted image is not a valid boot.img!"; break
-            fi
         fi
 
-        ##
-        # Disassemble the boot.img
-        ##
-        echo "Unpacking the boot.img"
+        if $SETTINGS_ACTIONS_VALIDATE && ! $SETTINGS_SCRIPT validate; then
+            echo "The extracted image is not a valid boot.img!"; break
 
-        if $SETTINGS_ACTIONS_UNPACK && ! $SETTINGS_SCRIPT unpack; then
-            echo "It was not possible to unpack the boot.img!"; break
+        elif ! $SETTINGS_ACTIONS_VALIDATE && ! abootimg -i $CONFIG_FILE_BOOTIMG; then
+            echo "The extracted image is not a valid boot.img!"; break
+        fi
 
-        elif ! $SETTINGS_ACTIONS_UNPACK && ! ( cd $CONFIG_DIR_BOOTIMG && abootimg -x $CONFIG_FILE_BOOTIMG); then
-            if ! unpack-bootimg -i $CONFIG_FILE_BOOTIMG -o $CONFIG_DIR_BOOTIMG -k $($bb basename $CONFIG_FILE_ZIMAGE) -r $($bb basename $CONFIG_FILE_INITRD) -s $($bb basename $CONFIG_FILE_STAGE2); then
+        if $bb [ "$ACTION" != "flash-stored" ]; then
+            ##
+            # Disassemble the boot.img
+            ##
+            echo "Unpacking the boot.img"
+
+            if $SETTINGS_ACTIONS_UNPACK && ! $SETTINGS_SCRIPT unpack; then
                 echo "It was not possible to unpack the boot.img!"; break
+
+            elif ! $SETTINGS_ACTIONS_UNPACK && ! ( cd $CONFIG_DIR_BOOTIMG && abootimg -x $CONFIG_FILE_BOOTIMG); then
+                if ! unpack-bootimg -i $CONFIG_FILE_BOOTIMG -o $CONFIG_DIR_BOOTIMG -k $($bb basename $CONFIG_FILE_ZIMAGE) -r $($bb basename $CONFIG_FILE_INITRD) -s $($bb basename $CONFIG_FILE_STAGE2); then
+                    echo "It was not possible to unpack the boot.img!"; break
+                fi
             fi
-        fi
 
-        ##
-        # Disassemble initrd
-        ##
-        echo "Disassembling the initrd.img"
+            ##
+            # Disassemble initrd
+            ##
+            echo "Disassembling the initrd.img"
 
-        if $SETTINGS_ACTIONS_DISASSEMBLE && ! $SETTINGS_SCRIPT disassemble; then
-            echo "It was not possible to disassemble the initrd.img!"; break
+            if $SETTINGS_ACTIONS_DISASSEMBLE && ! $SETTINGS_SCRIPT disassemble; then
+                echo "It was not possible to disassemble the initrd.img!"; break
 
-        elif ! $SETTINGS_ACTIONS_DISASSEMBLE && ! $bb zcat $CONFIG_FILE_INITRD | ( cd $CONFIG_DIR_INITRD && $bb cpio -i ); then
-            echo "It was not possible to disassemble the initrd.img!"; break
-        fi
-
-        ##
-        # Execute all of the injector.d scripts
-        ##
-        echo "Running injector scripts"
-
-        for lInjectorScript in `$bb find $CONFIG_DIR_SCRIPTS -name '*.sh' | sort -n`; do
-            echo "Executing $($bb basename $lInjectorScript)"
-
-            if ! $lInjectorScript; then
-                echo "The injector.d script $($bb basename $lInjectorScript) failed to execute properly!"; break 2
+            elif ! $SETTINGS_ACTIONS_DISASSEMBLE && ! $bb zcat $CONFIG_FILE_INITRD | ( cd $CONFIG_DIR_INITRD && $bb cpio -i ); then
+                echo "It was not possible to disassemble the initrd.img!"; break
             fi
-        done
 
-        ##
-        # Re-assamble initrd.img
-        ##
-        echo "Re-assambling the initrd.img"
+            ##
+            # Execute all of the injector.d scripts
+            ##
+            echo "Running injector scripts"
 
-        if $SETTINGS_ACTIONS_ASSEMBLE && ! $SETTINGS_SCRIPT assemble; then
-            echo "It was not possible to Re-assamble the initrd.img!"; break
+            for lInjectorScript in `$bb find $CONFIG_DIR_SCRIPTS -name '*.sh' | sort -n`; do
+                echo "Executing $($bb basename $lInjectorScript)"
 
-        elif ! $SETTINGS_ACTIONS_ASSEMBLE && ! mkbootfs $CONFIG_DIR_INITRD | $bb gzip > $CONFIG_FILE_INITRD; then
-            if ! ( cd $CONFIG_DIR_INITRD && $bb find | $bb sort | $bb cpio -o -H newc ) | $bb gzip > $CONFIG_FILE_INITRD; then
+                if ! $lInjectorScript; then
+                    echo "The injector.d script $($bb basename $lInjectorScript) failed to execute properly!"; break 2
+                fi
+            done
+
+            ##
+            # Re-assamble initrd.img
+            ##
+            echo "Re-assambling the initrd.img"
+
+            if $SETTINGS_ACTIONS_ASSEMBLE && ! $SETTINGS_SCRIPT assemble; then
                 echo "It was not possible to Re-assamble the initrd.img!"; break
+
+            elif ! $SETTINGS_ACTIONS_ASSEMBLE && ! mkbootfs $CONFIG_DIR_INITRD | $bb gzip > $CONFIG_FILE_INITRD; then
+                if ! ( cd $CONFIG_DIR_INITRD && $bb find | $bb sort | $bb cpio -o -H newc ) | $bb gzip > $CONFIG_FILE_INITRD; then
+                    echo "It was not possible to Re-assamble the initrd.img!"; break
+                fi
             fi
-        fi
 
-        ##
-        # Re-assamble boot.img
-        ##
-        echo "Re-packing the boot.img"
+            ##
+            # Re-assamble boot.img
+            ##
+            echo "Re-packing the boot.img"
 
-        if $SETTINGS_ACTIONS_PACK && ! $SETTINGS_SCRIPT pack; then
-            echo "It was not possible to Re-pack the boot.img!"; break
+            if $SETTINGS_ACTIONS_PACK && ! $SETTINGS_SCRIPT pack; then
+                echo "It was not possible to Re-pack the boot.img!"; break
 
-        elif ! $SETTINGS_ACTIONS_PACK; then
-            if $bb [ ! -f $CONFIG_FILE_CFG ] || ! abootimg -u $CONFIG_FILE_BOOTIMG -r $CONFIG_FILE_INITRD -f $CONFIG_FILE_CFG; then
-                # Abootimg some times fails while updating, and it is not great at creating images from scratch
-                if ! mkbootimg -o $CONFIG_FILE_BOOTIMG --kernel $CONFIG_FILE_ZIMAGE --ramdisk $CONFIG_FILE_INITRD $($bb test -n "$SETTINGS_BASE" && echo "--base") $SETTINGS_BASE $($bb test -n "$SETTINGS_CMDLINE" && echo "--cmdline") "$SETTINGS_CMDLINE" $($bb test -n "$SETTINGS_PAGESIZE" && echo "--pagesize") $SETTINGS_PAGESIZE $($bb test -f $CONFIG_FILE_STAGE2 && echo "--second") $($bb test -f $CONFIG_FILE_STAGE2 && echo $CONFIG_FILE_STAGE2); then
-                    echo "It was not possible to Re-pack the boot.img!"; break
+            elif ! $SETTINGS_ACTIONS_PACK; then
+                if $bb [ ! -f $CONFIG_FILE_CFG ] || ! abootimg -u $CONFIG_FILE_BOOTIMG -r $CONFIG_FILE_INITRD -f $CONFIG_FILE_CFG; then
+                    # Abootimg some times fails while updating, and it is not great at creating images from scratch
+                    if ! mkbootimg -o $CONFIG_FILE_BOOTIMG --kernel $CONFIG_FILE_ZIMAGE --ramdisk $CONFIG_FILE_INITRD $($bb test -n "$SETTINGS_BASE" && echo "--base") $SETTINGS_BASE $($bb test -n "$SETTINGS_CMDLINE" && echo "--cmdline") "$SETTINGS_CMDLINE" $($bb test -n "$SETTINGS_PAGESIZE" && echo "--pagesize") $SETTINGS_PAGESIZE $($bb test -f $CONFIG_FILE_STAGE2 && echo "--second") $($bb test -f $CONFIG_FILE_STAGE2 && echo $CONFIG_FILE_STAGE2); then
+                        echo "It was not possible to Re-pack the boot.img!"; break
+                    fi
                 fi
             fi
         fi
@@ -290,7 +292,7 @@ while true; do
         ##
         # Write boot.img to the device
         ##
-        if $bb [[ "$ACTION" = "inject-flash-current" || "$ACTION" = "inject-flash-stored" ]]; then
+        if $bb [[ "$ACTION" = "inject-flash-current" || "$ACTION" = "inject-flash-stored" || "$ACTION" = "flash-stored" ]]; then
             echo "Writing the new boot.img to the device"
 
             if $SETTINGS_ACTIONS_WRITE; then
