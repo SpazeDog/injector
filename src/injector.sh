@@ -150,27 +150,27 @@ while true; do
         for i in /etc/recovery.fstab /recovery.fstab; do
             if $bb [[ -f $i && "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]]; then
                 if $bb grep -q '/data' /proc/mounts || $bb mount /data; then
-                    export CONFIG_STORAGE=/data/media/0; break
+                    export CONFIG_DIR_STORAGE=/data/media/0; break
                 fi
 
             elif [ -f $i ]; then
                 if $bb grep -q '/sdcard' /proc/mounts || $bb mount /sdcard; then
-                    export CONFIG_STORAGE=/sdcard; break
+                    export CONFIG_DIR_STORAGE=/sdcard; break
                 fi
             fi
         done
 
-        if $bb [ -z "$CONFIG_STORAGE" ] && $bb [ "$ACTION" != "inject-flash-current" ]]; then
+        if $bb [ -z "$CONFIG_DIR_STORAGE" ] && $bb [ "$ACTION" != "inject-flash-current" ]]; then
             echo "It was not possible to mount the parimary storage!"
         fi
 
-        lFileStoredBootimg=$CONFIG_STORAGE/Injector/boot.img
+        lFileStoredBootimg=$CONFIG_DIR_STORAGE/Injector/boot.img
 
         ##
         # Prepare our internal dirs and files
         ##
-        if $bb [[ -n "$CONFIG_STORAGE" && ! -d $CONFIG_STORAGE/Injector ]]; then
-            $bb mkdir -p $CONFIG_STORAGE/Injector || $bb mkdir $CONFIG_STORAGE/Injector
+        if $bb [[ -n "$CONFIG_DIR_STORAGE" && ! -d $CONFIG_DIR_STORAGE/Injector ]]; then
+            $bb mkdir -p $CONFIG_DIR_STORAGE/Injector || $bb mkdir $CONFIG_DIR_STORAGE/Injector
         fi
 
         $bb mkdir -p $CONFIG_DIR_BOOTIMG || $bb mkdir $CONFIG_DIR_BOOTIMG
@@ -341,9 +341,9 @@ while true; do
         break
     done
 
-    if $bb [ -n "$CONFIG_STORAGE" ]; then
-        echo "Moving log file to $CONFIG_STORAGE/Injector/injector.log"
-        $bb cp $LOG $CONFIG_STORAGE/Injector/
+    if $bb [ -n "$CONFIG_DIR_STORAGE" ]; then
+        echo "Moving log file to $CONFIG_DIR_STORAGE/Injector/injector.log"
+        $bb cp $LOG $CONFIG_DIR_STORAGE/Injector/
     fi
 
     echo "Cleaning up old files and directories"
