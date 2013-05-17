@@ -351,7 +351,7 @@ while true; do
     # For some reason, the boot.img needs some time before it can be deleted. And it might hang while trying, so do this in a subprocess
     $bb sleep 1
 
-    #$bb rm -rf $CONFIG_DIR_BOOTIMG
+    $bb rm -rf $CONFIG_DIR_BOOTIMG
     $bb rm -rf $CONFIG_FILE_BOOTIMG
 
     break
