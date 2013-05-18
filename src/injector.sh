@@ -234,7 +234,9 @@ while true; do
                 echo "It was not possible to disassemble the initrd.img!"; break
 
             elif ! $SETTINGS_ACTIONS_DISASSEMBLE && ! ( $bb gunzip < $CONFIG_FILE_INITRD > $CONFIG_FILE_INITRD.cpio && ( cd $CONFIG_DIR_INITRD && $bb cpio -i < $CONFIG_FILE_INITRD.cpio ) ); then
-                echo "It was not possible to disassemble the initrd.img!"; break
+                if ! ( $bb lzma -dc < $CONFIG_FILE_INITRD > $CONFIG_FILE_INITRD.cpio && ( cd $CONFIG_DIR_INITRD && $bb cpio -i < $CONFIG_FILE_INITRD.cpio ) ); then
+                    echo "It was not possible to disassemble the initrd.img!"; break
+                fi
             fi
 
             if $bb [[ ! -e $CONFIG_DIR_INITRD/init || ! -e $CONFIG_DIR_INITRD/init.rc ]]; then

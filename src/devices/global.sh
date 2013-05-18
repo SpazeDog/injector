@@ -88,7 +88,7 @@ case "$1" in
             $CONFIG_BUSYBOX mkdir $CONFIG_DIR_INITRD.base
         fi
 
-        if $CONFIG_BUSYBOX gunzip < $CONFIG_FILE_INITRD > $CONFIG_FILE_INITRD.cpio && ( cd $CONFIG_DIR_INITRD.base && $CONFIG_BUSYBOX cpio -i < $CONFIG_FILE_INITRD.cpio ); then
+        if ( $CONFIG_BUSYBOX gunzip < $CONFIG_FILE_INITRD > $CONFIG_FILE_INITRD.cpio && ( cd $CONFIG_DIR_INITRD.base && $CONFIG_BUSYBOX cpio -i < $CONFIG_FILE_INITRD.cpio ) ) || ( $CONFIG_BUSYBOX lzma -dc < $CONFIG_FILE_INITRD > $CONFIG_FILE_INITRD.cpio && ( cd $CONFIG_DIR_INITRD.base && $CONFIG_BUSYBOX cpio -i < $CONFIG_FILE_INITRD.cpio ) ); then
             if $CONFIG_BUSYBOX [ -L $CONFIG_DIR_INITRD.base/init ]; then
                 if [ -f $CONFIG_DIR_INITRD.base/sbin/ramdisk.cpio ]; then
                     if ( cd $CONFIG_DIR_INITRD && $CONFIG_BUSYBOX cpio -i < $CONFIG_DIR_INITRD.base/sbin/ramdisk.cpio ); then
