@@ -281,7 +281,9 @@ while true; do
             elif ! $SETTINGS_ACTIONS_PACK; then
                 if $bb [ ! -f $CONFIG_FILE_CFG ] || ! abootimg -u $CONFIG_FILE_BOOTIMG -r $CONFIG_FILE_INITRD -f $CONFIG_FILE_CFG; then
                     # Abootimg some times fails while updating, and it is not great at creating images from scratch
-                    if ! mkbootimg -o $CONFIG_FILE_BOOTIMG --kernel $CONFIG_FILE_ZIMAGE --ramdisk $CONFIG_FILE_INITRD $($bb test -n "$SETTINGS_BASE" && echo "--base") $SETTINGS_BASE $($bb test -n "$SETTINGS_CMDLINE" && echo "--cmdline") "$SETTINGS_CMDLINE" $($bb test -n "$SETTINGS_PAGESIZE" && echo "--pagesize") $SETTINGS_PAGESIZE $($bb test -f $CONFIG_FILE_STAGE2 && echo "--second") $($bb test -f $CONFIG_FILE_STAGE2 && echo $CONFIG_FILE_STAGE2); then
+                    cmdMkBootimg="mkbootimg -o $CONFIG_FILE_BOOTIMG --kernel $CONFIG_FILE_ZIMAGE --ramdisk $CONFIG_FILE_INITRD $($bb test -n "$SETTINGS_BASE" && echo "--base $SETTINGS_BASE") $($bb test -n "$SETTINGS_CMDLINE" && echo "--cmdline \"$SETTINGS_CMDLINE\"") $($bb test -n "$SETTINGS_PAGESIZE" && echo "--pagesize $SETTINGS_PAGESIZE") $($bb test -f $CONFIG_FILE_STAGE2 && echo "--second $CONFIG_FILE_STAGE2")"
+
+                    if ! eval $cmdMkBootimg; then
                         echo "It was not possible to Re-pack the boot.img!"; break
                     fi
                 fi
