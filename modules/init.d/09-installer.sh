@@ -10,6 +10,9 @@ while read lFirst lSecond lRest; do
     if ! $lSkip; then
         if $lEntered; then
             if [ "$lFirst" = "class_start" ]; then
+                echo "    # Start ADB before any init.d scripts so that we can use logcat to debug" >> $CONFIG_DIR_INITRD/init.rc.tmp
+                echo "    start adbd" >> $CONFIG_DIR_INITRD/init.rc.tmp
+                echo "" >> $CONFIG_DIR_INITRD/init.rc.tmp
                 echo "    # Invoke /system/etc/init.d" >> $CONFIG_DIR_INITRD/init.rc.tmp
                 echo "    exec /system/bin/sysinit" >> $CONFIG_DIR_INITRD/init.rc.tmp
                 echo "" >> $CONFIG_DIR_INITRD/init.rc.tmp
