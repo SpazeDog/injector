@@ -148,7 +148,7 @@ while true; do
         # Prepare the primary storage
         ##
         for i in /etc/recovery.fstab /recovery.fstab; do
-            if $bb [[ -f $i && "`$bb grep /sdcard /etc/recovery.fstab | $bb awk '{print $2}'`" = "datamedia" ]]; then
+            if $bb [[ -f $i && "`$bb grep /sdcard $i | $bb awk '{print $2}'`" = "datamedia" ]]; then
                 if $bb grep -q '/data' /proc/mounts || $bb mount /data; then
                     export CONFIG_DIR_STORAGE=/data/media/0; break
                 fi
