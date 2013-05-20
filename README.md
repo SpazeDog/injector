@@ -81,6 +81,9 @@ Supported Devices
     * Sony Ericsson Experia Mini
     * Sony Ericsson Experia Mini Pro
 
+* 7x27
+    * Cherry Mobile Flame 2.0
+
 * EMMC
     * Most EMMC devies besides the once on the list
 
