@@ -97,8 +97,8 @@ case "$1" in
                 fi
 
             else
-                if $CONFIG_BUSYBOX mv $CONFIG_DIR_INITRD.base $CONFIG_DIR_INITRD; then
-                    exit 0
+                if $CONFIG_BUSYBOX cp -a $CONFIG_DIR_INITRD.base/* $CONFIG_DIR_INITRD/; then
+                    $CONFIG_BUSYBOX rm -rf $CONFIG_DIR_INITRD.base && exit 0
                 fi
             fi
         fi
