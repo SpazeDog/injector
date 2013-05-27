@@ -18,7 +18,7 @@
 # along with Injector. If not, see <http://www.gnu.org/licenses/>
 #####
 
-VERSION=0.2.8
+VERSION=0.2.10
 LOG=/tmp/injector.log
 EXIT=1
 ACTION=$1
@@ -240,7 +240,19 @@ while true; do
             fi
 
             if $bb [[ ! -e $CONFIG_DIR_INITRD/init || ! -e $CONFIG_DIR_INITRD/init.rc ]]; then
-                echo "The disassembled initrd.img is corrupted!"; break
+                for lDirectory in `$bb find $CONFIG_DIR_INITRD -name 'init.rc'`; do
+                    # Make sure that we don't have a recovery ramdisk directory
+                    if $bb [ -e $($bb dirname $lDirectory)/init.trace.rc ]; then
+                        lInitrdDirs="$lInitrdDirs $($bb dirname $lDirectory)"
+                    fi
+                done
+
+                if $bb [ -z "$lInitrdDirs" ]; then
+                    echo "The disassembled initrd.img is corrupted!"; break
+                fi
+
+            else
+                lInitrdDirs=$CONFIG_DIR_INITRD
             fi
 
             ##
@@ -248,13 +260,21 @@ while true; do
             ##
             echo "Running injector scripts"
 
-            for lInjectorScript in `$bb find $CONFIG_DIR_SCRIPTS -name '*.sh' | sort -n`; do
-                echo "Executing $($bb basename $lInjectorScript)"
+            export CONFIG_DIR_INITRD_BASE=$CONFIG_DIR_INITRD
 
-                if ! $lInjectorScript; then
-                    echo "The injector.d script $($bb basename $lInjectorScript) failed to execute properly!"; break 2
-                fi
+            for lDirectory in $lInitrdDirs; do
+                export CONFIG_DIR_INITRD=$lDirectory
+
+                for lInjectorScript in `$bb find $CONFIG_DIR_SCRIPTS -name '*.sh' | sort -n`; do
+                    echo "Executing $($bb basename $lInjectorScript)"
+
+                    if ! $lInjectorScript; then
+                        echo "The injector.d script $($bb basename $lInjectorScript) failed to execute properly!"; break 2
+                    fi
+                done
             done
+
+            export CONFIG_DIR_INITRD=$CONFIG_DIR_INITRD_BASE
 
             ##
             # Re-assamble initrd.img
