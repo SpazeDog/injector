@@ -27,7 +27,7 @@ Supported Devices
     * HTC Nexus One `Tested`
 
 * Marvel
-    * HTC Wildfire S
+    * HTC Wildfire S `Tested`
 
 * Chacha
     * HTC Chacha `Tested`
