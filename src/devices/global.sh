@@ -24,9 +24,16 @@ if $CONFIG_BUSYBOX [[ -e /proc/mtd && -d /dev/mtd ]]; then
     lDevice=boot
 
 else
-    for i in /recovery.fstab /etc/recovery.fstab; do
+    for i in /tmp/recovery.fstab /recovery.fstab /etc/recovery.fstab; do
         if $CONFIG_BUSYBOX [ -e $i ]; then
-            lDevice=$($CONFIG_BUSYBOX grep '/boot' $i | $CONFIG_BUSYBOX awk '{print $3}'); break
+            lDevice=$($CONFIG_BUSYBOX grep '/boot' $i | $CONFIG_BUSYBOX awk '{print $3}')
+
+            # TWRP Recoveries has an issue with deleting /etc content during update.zip flashing
+            if $CONFIG_BUSYBOX [ ! -f /tmp/recovery.fstab ]; then
+                $CONFIG_BUSYBOX cp $i /tmp/recovery.fstab
+            fi
+
+            break
         fi
     done
 
