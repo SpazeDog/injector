@@ -18,6 +18,9 @@ If you are using a *nix operating system, you can just use the `make.sh` file to
 Supported Devices
 ------
 
+* Legend
+    * HTC Legend `Tested`
+
 * QSD8K
     * HTC Desire GSM `Tested`
     * HTC Desire CDMA `Tested`
