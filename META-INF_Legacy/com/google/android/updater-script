@@ -9,7 +9,7 @@ package_extract_file("busybox", "/tmp/busybox");
 ui_print("@    Running the Injector");
 set_perm(0, 0, 0775, "/tmp/busybox");
 set_perm(0, 0, 0775, "/tmp/injector/injector.sh");
-run_program("/tmp/injector/injector.sh", "inject-flash-current");
+run_program("/tmp/injector/injector.sh", "inject|flash);
 
 ui_print(" ");
 

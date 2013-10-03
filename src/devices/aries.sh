@@ -23,7 +23,7 @@
 case "$1" in 
     write)
         if $CONFIG_BUSYBOX [ -e /dev/block/bml7 ]; then
-            if flash_image boot $CONFIG_FILE_BOOTIMG; then
+            if flash_image boot $CONFIG_FILE_BOOTIMG 2>/dev/null || ( $CONFIG_BUSYBOX test -e /sbin/flash_image && /sbin/flash_image boot $CONFIG_FILE_BOOTIMG ); then
                 exit 0
             fi
 

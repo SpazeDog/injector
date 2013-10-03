@@ -21,16 +21,11 @@
 ## Samsung Galaxy Y
 
 case "$1" in 
-    read)
-        if $CONFIG_BUSYBOX dd if=/dev/bml7 of=$CONFIG_FILE_BOOTIMG; then
-            exit 0
-        fi
-    ;;
+    device)
+        bmlunlock
+        echo boot
 
-    write)
-        if bmlunlock && $CONFIG_BUSYBOX dd if=$CONFIG_FILE_BOOTIMG of=/dev/block/bml7; then
-            exit 0
-        fi
+        return 0
     ;;
 esac
 

@@ -23,7 +23,7 @@ if test $status -eq 15
 then
 	./bml_over_mtd flash $PARTITION $PARTITION_START_BLOCK $RESERVOIRPARTITION $RESERVOIR_START_BLOCK $IMAGE; status=$?
 else
-	./flash_image $PARTITION $IMAGE; status=$?
+	./flash_image $PARTITION $IMAGE || ( test -e /sbin/flash_image && /sbin/flash_image $PARTITION $IMAGE ); status=$?
 fi
 
 exit $status

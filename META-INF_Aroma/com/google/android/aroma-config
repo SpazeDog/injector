@@ -35,8 +35,8 @@ selectbox(
 
     "action.prop",
 
-    "Inject boot partition",               "Extract, inject and reflash the current boot.img",                                1,    #-- selected.0 = 1
-    "Inject and store current boot.img",   "Extract, inject and store the current boot.img to the primary storage",            0,    #-- selected.0 = 2
+    "Inject the boot partition",               "Extract, inject and reflash the current boot.img",                                1,    #-- selected.0 = 1
+    "Inject and store from boot partition",   "Extract, inject and store the current boot.img to the primary storage",            0,    #-- selected.0 = 2
     "Inject stored boot.img",              "Inject a boot.img stored in Injector/ on the primary storage",                      0,    #-- selected.0 = 3
     "Inject and Flash stored boot.img",    "Inject and flash a boot.img stored in Injector/ on the primary storage",            0,     #-- selected.0 = 4
     "Flash stored boot.img",              "Flash a boot.img stored in Injector/ on the primary storage",                      0    #-- selected.0 = 5
@@ -44,26 +44,26 @@ selectbox(
 
 if prop("action.prop", "selected.0")=="1" then
     setvar("inject.message", "Injecting the boot partition");
-    setvar("inject.action", "inject-flash-current");
+    setvar("inject.action", "inject|flash");
 
 else
     if prop("action.prop", "selected.0")=="2" then
         setvar("inject.message", "Injecting the extracted boot partition and storing it");
-        setvar("inject.action", "inject-store-current");
+        setvar("inject.action", "inject");
 
     else
         if prop("action.prop", "selected.0")=="3" then
             setvar("inject.message", "Injecting stored boot.img");
-            setvar("inject.action", "inject-stored");
+            setvar("inject.action", "inject|stored");
 
         else
             if prop("action.prop", "selected.0")=="4" then
                 setvar("inject.message", "Injecting and flashing stored boot.img");
-                setvar("inject.action", "inject-flash-stored");
+                setvar("inject.action", "inject|flash|stored");
 
             else
                 setvar("inject.message", "Injecting and flashing stored boot.img");
-                setvar("inject.action", "flash-stored");
+                setvar("inject.action", "flash|stored");
             endif;
         endif;
     endif;

@@ -4,6 +4,10 @@ OUTPUT="$1"
 MODULE=$(test -n "$2" && echo "$2" || echo "template")
 TYPE=$(test -n "$3" && echo "$3" || echo "aroma")
 
+if [ -z "$OUTPUT" ]; then
+    echo "Usage: ./make.sh <dest> [<module> [<type>]]"; exit 1
+fi
+
 if [ ! -d modules/$MODULE ]; then
     echo "The module $MODULE does not exist!"; exit 1
 fi
@@ -22,12 +26,26 @@ case "$TYPE" in
     ;;
 esac
 
-if [ -z "$OUTPUT" ]; then
-    OUTPUT="$(basename "`readlink -f "$(dirname $0)" | sed 's/ /_/'`").zip"
+if [ -d "$OUTPUT" ]; then
+    DIR_OUTPUT="$OUTPUT"
 
-elif ! echo "$OUTPUT" | grep -q -e "\.zip$"; then
-    OUTPUT="$OUTPUT.zip"
+else
+    DIR_OUTPUT="$(dirname "$OUTPUT")"
+    FILE_OUTPUT="$(basename "$OUTPUT")"
+
+    if [ ! -d "$DIR_OUTPUT" ]; then
+        echo "The directory $DIR_OUTPUT does not exist!"; exit 1
+    fi
 fi
+
+if [ -z "$FILE_OUTPUT" ]; then
+    FILE_OUTPUT="$(basename "`readlink -f "$(dirname $0)" | sed 's/ /_/'`").zip"
+
+elif ! echo "$FILE_OUTPUT" | grep -q -e "\.zip$"; then
+    FILE_OUTPUT="$FILE_OUTPUT.zip"
+fi
+
+OUTPUT="$(readlink -f "$DIR_OUTPUT/$FILE_OUTPUT")"
 
 if [ -f "$OUTPUT" ]; then
     echo -n "Override existing file? [y/n]: "; read INPUT
@@ -43,8 +61,7 @@ elif [ -e "$OUTPUT" ]; then
     echo "Can't override $OUTPUT"; exit 1
 fi
 
-tFolder=".$(basename "$OUTPUT" | sed 's/ /_/')"
-OUTPUT=$(readlink -f "$OUTPUT")
+tFolder=".$(echo "$FILE_OUTPUT" | sed 's/ /_/')"
 
 mkdir $tFolder
 cp -a $FOLDER $tFolder/META-INF
