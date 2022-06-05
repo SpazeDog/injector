@@ -4,7 +4,7 @@ Injector
 An Android Ramdisk Injector
 
 About
-------
+------ 
 The one problem with Android when it comes to customization, is the Ramdisk. You are not able to edit anything while the device is booted, and each device differs in many ways which makes it difficult to create an updater script to do the work without targering a specific device. 
 
 Injector is a recovery script that enables you to modify the ramdisk on multiple devices, without having to worry about creating device specific code. The injector will extract the ramdisk for you, and it will write it back to the boot partition once you are done. All you have to do, is create any script that does whatever work you need it to do, place it in the injector.d folder, compress the updater archive and upload. 
